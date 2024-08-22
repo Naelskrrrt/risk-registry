@@ -10,13 +10,13 @@ import { AuthProvider } from "./context/AuthProvider.tsx";
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
-	<StrictMode>
-		<QueryClientProvider client={queryClient}>
-			<AuthProvider>
-				<ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-					<App />
-				</ThemeProvider>
-			</AuthProvider>
-		</QueryClientProvider>
-	</StrictMode>
+    <StrictMode>
+        <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+                <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+                    <App />
+                </ThemeProvider>
+            </AuthProvider>
+        </QueryClientProvider>
+    </StrictMode>
 );

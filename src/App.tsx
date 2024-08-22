@@ -1,23 +1,17 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import SignIn from "./presentation/pages/auth/sign-in";
+// import router from "./infrastructure/routes/routes";
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <p>Hello Home</p>,
-        children: [
-            {
-                path: "about",
-                element: <p>Hello About</p>,
-            },
-        ],
+        element: <App />,
     },
     {
         path: "/login",
         element: <SignIn />,
     },
 ]);
-
 function App() {
     return (
         <>

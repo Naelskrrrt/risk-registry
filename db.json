@@ -1,16 +1,11 @@
 {
-    "users": [
-      {
-        "id": 1,
-        "username": "john_doe",
-        "email": "john@example.com",
-        "password": "123456"
-      },
-      {
-        "id": 2,
-        "username": "jane_doe",
-        "email": "jane@example.com",
-        "password": "abcdef"
-      }
-    ]
-  }
+	"users": [
+		{
+			"id": 1,
+			"username": "user1",
+			"password": "password1",
+			"refreshToken": null
+		}
+	],
+	"tokens": []
+}

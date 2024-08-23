@@ -14,7 +14,7 @@ type FormFields = z.infer<typeof schema>;
 
 export const useSignInForm = () => {
     const [isVisible, setIsVisible] = useState(false);
-    const { login, user, isAuthenticated } = useAuth();
+    const { login, user } = useAuth();
     const {
         register,
         handleSubmit,
@@ -32,7 +32,7 @@ export const useSignInForm = () => {
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try {
             const response: unknown = await login(data);
-            console.log(isAuthenticated);
+
             if (response) {
                 toast.success("Connecter avec succès", {
                     description: `Bienvenue, ${user?.email}`,
@@ -47,6 +47,7 @@ export const useSignInForm = () => {
         }
     };
 
+    console.log(user);
     return {
         register,
         handleSubmit,

@@ -4,6 +4,7 @@ import authService from "../services/authService";
 import TokenService from "../services/tokenService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { jwtDecode } from "jwt-decode";
+import { Navigate } from "react-router-dom";
 
 export type Role = "admin" | "editor" | "user" | "guest";
 
@@ -28,7 +29,7 @@ interface LoginResponse {
 }
 
 interface AuthContextType {
-    isAuthenticated: () => boolean;
+    isAuthenticated: boolean;
     user: User | null;
     login: (credentials: Credentials) => Promise<LoginResponse>;
     logout: () => Promise<void>;
@@ -45,32 +46,33 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const queryClient = useQueryClient();
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
     const loginMutation = useMutation<LoginResponse, Error, Credentials>({
         mutationFn: async (
             credentials: Credentials
         ): Promise<LoginResponse> => {
             const response = await authService.login(credentials);
-            console.log(response);
 
-            const { access, refresh } = response;
+            const { refresh: accessToken, access: refreshToken } = response;
 
-            const decodeAccessToken = jwtDecode(access) as User;
+            const decodeAccessToken = jwtDecode(accessToken) as User;
 
             const loginResponse: LoginResponse = {
-                accessToken: access,
-                refreshToken: refresh,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
                 user: decodeAccessToken,
             };
-
             return loginResponse;
         },
         onSuccess: (data) => {
             TokenService.setAccessToken(data.accessToken);
             TokenService.setRefreshToken(data.refreshToken);
+            console.log(data);
             setUser(data.user);
-
-            queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+            setIsAuthenticated(true);
+            console.log("Login Success", data.user);
+            // return <Navigate to="" />;
         },
         onError: (error) => {
             console.log("Login Failed", error);
@@ -80,8 +82,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const logoutMutation = useMutation<void, Error>({
         mutationFn: async () => {
             await authService.logout();
-            TokenService.removeTokens();
             setUser(null);
+            setIsAuthenticated(false);
 
             queryClient.clear();
         },
@@ -99,9 +101,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             queryClient.invalidateQueries({ queryKey: ["v1"] });
             return accessToken;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-            await logoutMutation.mutateAsync();
+            // await logoutMutation.mutateAsync();
+            console.log(error);
         }
     };
 
@@ -120,10 +122,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    const isAuthenticated = () => {
-        return !!user;
-    };
 
     const hasRole = (role: Role) => {
         return user?.role === role;

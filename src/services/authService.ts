@@ -24,24 +24,40 @@ const authService = {
             "/login/",
             credentials
         );
-        console.log(response);
+        console.log("AuthService: ", response);
         const { access: accessToken, refresh: refreshToken } = response.data;
-        console.log(accessToken);
+        console.log(accessToken, refreshToken);
 
         TokenService.setAccessToken(accessToken);
         TokenService.setRefreshToken(refreshToken);
 
-        console.log(response.data);
+        console.log(
+            "tokenService: ",
+            TokenService.getAccessToken(),
+            TokenService.getRefreshToken()
+        );
+
+        localStorage.setItem("user", "hello");
+
         return response.data;
     },
-    logout: async (): Promise<void> => {
-        TokenService.removeTokens();
+    logout: async (): Promise<{ message: string }> => {
+        const refreshToken = TokenService.getRefreshToken();
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const response = await apiAuth.post<{ accessToken: string }>(
+            "token/blacklist/",
+            { refresh: refreshToken }
+        );
+
+        return { message: "Déconnexion réussie" };
     },
     refreshAccessToken: async (): Promise<string> => {
         const refreshToken = TokenService.getRefreshToken();
+        console.log("RefreshToken: ", refreshToken);
         const response = await apiAuth.post<{ accessToken: string }>(
-            "/refresh/",
-            { refreshToken }
+            "token/refresh/",
+            { refresh: refreshToken }
         );
         const { accessToken } = response.data;
 

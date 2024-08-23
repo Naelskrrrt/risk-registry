@@ -106,7 +106,7 @@ const SignIn = () => {
                         alt="auth"
                         className="h-full hidden lg:block"
                     />
-                    <p className="text-[11px] absolute bottom-3 left-10">
+                    <p className="text-[11px] absolute  w-full lg:bottom-3 lg:left-10 bottom-5 text-center lg:w-fit">
                         Made with <span className="text-red-500">❤</span> by
                         AccèsBanque, DevHub Fianarantsoa
                     </p>

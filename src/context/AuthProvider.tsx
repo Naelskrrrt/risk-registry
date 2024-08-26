@@ -1,10 +1,9 @@
 // contexts/AuthProvider.tsx
-import React, { createContext, useState, useEffect, ReactNode } from "react";
-import authService from "../services/authService";
-import TokenService from "../services/tokenService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { jwtDecode } from "jwt-decode";
-import { Navigate } from "react-router-dom";
+import React, { createContext, ReactNode, useEffect, useState } from "react";
+import authService from "../services/authService";
+import TokenService from "../services/tokenService";
 
 export type Role = "admin" | "editor" | "user" | "guest";
 

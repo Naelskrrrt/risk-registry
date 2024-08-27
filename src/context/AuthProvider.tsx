@@ -2,167 +2,161 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { jwtDecode } from "jwt-decode";
 import React, {
-	createContext,
-	ReactNode,
-	useEffect,
-	useLayoutEffect,
-	useState,
+    createContext,
+    ReactNode,
+    useEffect,
+    useLayoutEffect,
+    useState,
 } from "react";
 import authService from "../services/authService";
 import TokenService from "../services/tokenService";
 
-export type Role = "admin" | "editor" | "user" | "guest";
-
 interface User {
-	user_id: number;
-	email: string;
-	session: string;
-	name: string;
-	stackholder_title: string;
-	role_title: string | null;
-	role_id: number;
-	token_type: string;
+    user_id: number;
+    email: string;
+    session: string;
+    user_name: string;
+    stackholder_title: string;
+    role_title: string | null;
+    role_id: number;
+    token_type: string;
 }
 
 interface Credentials {
-	session: string;
-	password: string;
+    session: string;
+    password: string;
 }
 
 interface LoginResponse {
-	accessToken: string;
-	refreshToken: string;
-	user: User;
+    access: string;
+    refresh: string;
+    user: User;
 }
 
 interface AuthContextType {
-	isAuthenticated: boolean;
-	user: User | null;
-	login: (credentials: Credentials) => Promise<LoginResponse>;
-	logout: () => Promise<void>;
-	refreshToken: () => Promise<string | void>;
-	hasRole: (role: Role) => boolean;
+    isAuthenticated: boolean;
+    user: User | null;
+    login: (credentials: Credentials) => Promise<LoginResponse>;
+    logout: () => Promise<void>;
+    refreshToken: () => Promise<string | undefined>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
-	children: ReactNode;
+    children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-	const [user, setUser] = useState<User | null>(null);
-	const queryClient = useQueryClient();
-	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [user, setUser] = useState<User | null>(null);
+    const queryClient = useQueryClient();
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-	const loginMutation = useMutation<LoginResponse, Error, Credentials>({
-		mutationFn: async (
-			credentials: Credentials
-		): Promise<LoginResponse> => {
-			const response = await authService.login(credentials);
+    const loginMutation = useMutation<LoginResponse, Error, Credentials>({
+        mutationFn: async (
+            credentials: Credentials
+        ): Promise<LoginResponse> => {
+            const response = await authService.login(credentials);
 
-			const { refresh: accessToken, access: refreshToken } = response;
+            // Correction des noms des tokens
+            const { access: accessToken, refresh: refreshToken } = response;
 
-			const decodeAccessToken = jwtDecode(accessToken) as User;
+            const decodeAccessToken = jwtDecode(accessToken) as User;
 
-			const loginResponse: LoginResponse = {
-				accessToken: accessToken,
-				refreshToken: refreshToken,
-				user: decodeAccessToken,
-			};
-			return loginResponse;
-		},
-		onSuccess: (data) => {
-			TokenService.setAccessToken(data.accessToken);
-			TokenService.setRefreshToken(data.refreshToken);
-			console.log(data);
-			setUser(data.user);
-			setIsAuthenticated(true);
-			console.log("Login Success", data.user);
-			// return <Navigate to="" />;
-		},
-		onError: (error) => {
-			console.log("Login Failed", error);
-		},
-	});
+            const loginResponse: LoginResponse = {
+                access: accessToken,
+                refresh: refreshToken,
+                user: decodeAccessToken,
+            };
+            return loginResponse;
+        },
+        onSuccess: (data) => {
+            TokenService.setAccessToken(data.access);
+            TokenService.setRefreshToken(data.refresh);
+            console.log(data);
+            setUser(data.user);
+            setIsAuthenticated(true);
+            console.log("Login Success", data.user);
+        },
+        onError: (error) => {
+            console.log("Login Failed", error);
+        },
+    });
 
-	const logoutMutation = useMutation<void, Error>({
-		mutationFn: async () => {
-			await authService.logout();
-			setUser(null);
-			setIsAuthenticated(false);
+    const logoutMutation = useMutation<void, Error>({
+        mutationFn: async () => {
+            await authService.logout();
+            setUser(null);
+            setIsAuthenticated(false);
+            TokenService.removeTokens();
+            queryClient.clear();
+        },
 
-			queryClient.clear();
-		},
-		onError: (error) => {
-			console.error("Logout Failed", error);
-		},
-	});
+        onError: (error) => {
+            console.error("Logout Failed", error);
+        },
+    });
 
-	const refreshToken = async (): Promise<string | void> => {
-		try {
-			const accessToken = await authService.refreshAccessToken();
-			TokenService.setAccessToken(accessToken);
-			const decodeAccessToken = jwtDecode(accessToken) as User;
-			setUser(decodeAccessToken);
+    const refreshToken = async (): Promise<string | undefined> => {
+        try {
+            const response = await authService.refreshAccessToken();
+            if (response) {
+                const { access: accessToken } = response;
+                TokenService.setAccessToken(accessToken);
+                console.log("RefreshToken: ", accessToken);
+                const decodeAccessToken = jwtDecode(accessToken) as User;
+                setUser(decodeAccessToken);
+                return accessToken;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
-			queryClient.invalidateQueries({ queryKey: ["v1"] });
-			return accessToken;
-		} catch (error) {
-			// await logoutMutation.mutateAsync();
-			console.log(error);
-		}
-	};
+    const login = async (credentials: Credentials): Promise<LoginResponse> => {
+        return loginMutation.mutateAsync(credentials);
+    };
 
-	const login = async (credentials: Credentials): Promise<LoginResponse> => {
-		return loginMutation.mutateAsync(credentials);
-	};
+    const logout = async (): Promise<void> => {
+        await logoutMutation.mutateAsync();
+    };
 
-	const logout = async (): Promise<void> => {
-		await logoutMutation.mutateAsync();
-	};
+    useEffect(() => {
+        const storedRefreshToken = TokenService.getRefreshToken();
+        if (storedRefreshToken) {
+            refreshToken();
+        }
+    }, []);
 
-	useEffect(() => {
-		const storedRefreshToken = TokenService.getRefreshToken();
-		if (storedRefreshToken) {
-			refreshToken();
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+    useLayoutEffect(() => {
+        const accessToken = TokenService.getAccessToken();
+        console.log(accessToken);
 
-	const hasRole = (role: Role) => {
-		return user?.role_title === role;
-	};
+        if (accessToken) {
+            setUser(jwtDecode(accessToken) as User);
+            setIsAuthenticated(true); // Assurez-vous que l'utilisateur est authentifié
+        }
+    }, []);
 
-	useLayoutEffect(() => {
-		const accessToken = TokenService.getAccessToken();
-		console.log(accessToken);
-
-		if (accessToken) {
-			setUser(jwtDecode(accessToken) as User);
-		}
-	}, []);
-
-	return (
-		<AuthContext.Provider
-			value={{
-				user,
-				login,
-				logout,
-				refreshToken,
-				isAuthenticated,
-				hasRole,
-			}}>
-			{children}
-		</AuthContext.Provider>
-	);
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                login,
+                logout,
+                refreshToken,
+                isAuthenticated,
+            }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
-	const context = React.useContext(AuthContext);
-	if (context === undefined) {
-		throw new Error("useAuth must be used within an AuthProvider");
-	}
-	return context;
+    const context = React.useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 };

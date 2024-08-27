@@ -1,14 +1,4 @@
-// type StorageType = {
-//     getItem: (key: string) => string | null;
-//     setItem: (key: string, value: string) => void;
-//     removeItem: (key: string) => void;
-// };
-
 const TokenService = (() => {
-    // const setStorage = (newStorage: StorageType) => {
-    // 	storage = newStorage;
-    // };
-
     const getAccessToken = (): string | null => localStorage.getItem("access");
     const getRefreshToken = (): string | null =>
         localStorage.getItem("refresh");

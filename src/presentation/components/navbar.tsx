@@ -1,0 +1,28 @@
+// import React from "react";
+
+import { Icon } from "@iconify/react/dist/iconify.js";
+import { Button } from "@nextui-org/button";
+
+const Navbar = () => {
+	return (
+		<div className="w-full h-16 flex items-center justify-end ">
+			<Button
+				className="bg-slate-50/20 backdrop-blur-sm border-1 border-white/60 rounded-2xl gap-3 -px-1"
+				startContent={
+					<Icon
+						icon="solar:hamburger-menu-outline"
+						fontSize="18px"
+						className="text-white"
+					/>
+				}>
+				<img
+					src="/src/presentation/assets/icon/avatar.svg"
+					alt="un mini profile"
+					className="w-7"
+				/>
+			</Button>
+		</div>
+	);
+};
+
+export default Navbar;

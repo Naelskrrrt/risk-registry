@@ -1,7 +1,9 @@
+import { useAuth } from "@/context/AuthProvider";
 import React from "react";
 
-const AssessementIdentification = () => {
-    return <div>Identification</div>;
+const Identification = () => {
+	const { user } = useAuth();
+	return <div>Risk Identification {user?.email}</div>;
 };
 
-export default AssessementIdentification;
+export default Identification;

@@ -46,9 +46,13 @@ export const useSignInForm = () => {
                 navigate(from, { replace: true });
             }
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            console.log("Error: ", error);
+            if (error) {
                 toast.error("Erreur lors de la connexion", {
-                    description: "Veuillez vérifier vos identifiants",
+                    description:
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (error as any)?.response?.data?.message ||
+                        "Une erreur est survenue",
                 });
             }
         }

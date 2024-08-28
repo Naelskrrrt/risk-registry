@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
         onError: (error) => {
             console.log("Login Failed", error);
+            return error.message;
         },
     });
 

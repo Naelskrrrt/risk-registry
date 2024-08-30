@@ -4,8 +4,11 @@ import {
     ColumnDef,
     flexRender,
     getCoreRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
+import { Pagination } from "@nextui-org/pagination";
 
 import {
     Table,
@@ -19,27 +22,36 @@ import {
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    isLoading: boolean;
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    isLoading,
 }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        initialState: { pagination: { pageSize: 8 } },
     });
 
     return (
-        <div className="rounded-md border">
-            <Table>
-                <TableHeader>
+        <div className="rounded-md border  h-full relative">
+            <Table className="border h-full relative">
+                <TableHeader className="bg-nextblue-50 font-bold text-nextblue-500 hover:bg-nextblue-100">
                     {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
+                        <TableRow
+                            key={headerGroup.id}
+                            className=" bg-nextblue-100">
                             {headerGroup.headers.map((header) => {
                                 return (
-                                    <TableHead key={header.id}>
+                                    <TableHead
+                                        className="text-nextblue-500"
+                                        key={header.id}>
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(
@@ -53,10 +65,13 @@ export function DataTable<TData, TValue>({
                         </TableRow>
                     ))}
                 </TableHeader>
-                <TableBody>
-                    {table.getRowModel().rows?.length ? (
+                <TableBody className="">
+                    {isLoading ? (
+                        "Loading..."
+                    ) : table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
+                                className=""
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}>
                                 {row.getVisibleCells().map((cell) => (
@@ -80,6 +95,15 @@ export function DataTable<TData, TValue>({
                     )}
                 </TableBody>
             </Table>
+
+            <div className="flex justify-center p-2">
+                <Pagination
+                    showControls
+                    total={table.getPageCount()}
+                    initialPage={table.getState().pagination.pageIndex + 1}
+                    onChange={(page) => table.setPageIndex(page - 1)}
+                />
+            </div>
         </div>
     );
 }

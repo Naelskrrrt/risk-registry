@@ -18,9 +18,9 @@ export type Stackholder = {
 };
 
 export type Role = {
-    id?: number;
-    title?: string;
-    name?: string;
+    id: number;
+    title: string;
+    name: string;
 };
 
 export const columns: ColumnDef<User>[] = [

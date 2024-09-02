@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import ProtectedRoute from "./core/secure/ProtectedRoute";
 import AdminUser from "./presentation/pages/dashboard/Admin/AdminUser";
@@ -28,6 +28,8 @@ const Unauthorized = lazy(
     () => import("./presentation/pages/redirect/error/Unauthorized")
 );
 
+const roles: string[] = ["ADMIN", "RRA", "RIT", "VISITEUR"];
+
 const router = createBrowserRouter([
     {
         path: "/",
@@ -51,7 +53,7 @@ const router = createBrowserRouter([
             {
                 path: "",
                 element: (
-                    <ProtectedRoute allowedRoles={["teste"]}>
+                    <ProtectedRoute allowedRoles={[roles[0]]}>
                         <Outlet />
                     </ProtectedRoute>
                 ),
@@ -65,7 +67,7 @@ const router = createBrowserRouter([
             {
                 path: "risk-assessment",
                 element: (
-                    <ProtectedRoute allowedRoles={["admin"]}>
+                    <ProtectedRoute allowedRoles={[roles[1]]}>
                         <Outlet />
                     </ProtectedRoute>
                 ),
@@ -85,7 +87,7 @@ const router = createBrowserRouter([
             {
                 path: "risk-it",
                 element: (
-                    <ProtectedRoute allowedRoles={["admin"]}>
+                    <ProtectedRoute allowedRoles={[roles[2]]}>
                         <Outlet />
                     </ProtectedRoute>
                 ),

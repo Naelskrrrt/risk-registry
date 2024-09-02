@@ -1,6 +1,6 @@
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
-import { useFilteredUsers } from "@/hooks/useFilteredUsers";
+import { useFilteredUsers } from "@/hooks/useFetchUsers";
 
 interface FormValues {
     search: string;

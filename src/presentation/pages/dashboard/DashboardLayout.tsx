@@ -1,6 +1,7 @@
 import Navbar from "@/presentation/components/navbar";
 import Sidebar from "@/presentation/components/sidebar";
 import { Outlet } from "react-router-dom";
+import { Toaster } from "sonner";
 
 const DashboardLayout = () => {
     return (
@@ -12,6 +13,7 @@ const DashboardLayout = () => {
                     <Outlet />
                 </div>
             </div>
+            <Toaster position="top-right" closeButton richColors />
         </div>
     );
 };

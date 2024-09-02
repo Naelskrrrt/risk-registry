@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import {
     useFetchRoles,
     useFetchStackholder,
     useFilteredUsers,
-} from "@/hooks/useFilteredUsers";
+} from "@/hooks/useFetchUsers";
+import { usePatchUserState } from "@/hooks/useHandleUsers";
 import { DataTable } from "@/presentation/components/globalTable";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Button } from "@nextui-org/button";
@@ -13,9 +15,11 @@ import {
     DropdownTrigger,
 } from "@nextui-org/dropdown";
 import { Input } from "@nextui-org/input";
+import { Switch } from "@nextui-org/switch";
 import { Tooltip } from "@nextui-org/tooltip";
 import { ColumnDef } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Role, Stackholder, User } from "./constant/constant";
 
 const columns: ColumnDef<User>[] = [
@@ -50,6 +54,40 @@ const columns: ColumnDef<User>[] = [
     {
         accessorKey: "is_active",
         header: "Statut",
+        cell: (row) => {
+            const {
+                mutate: patchUserState,
+                isPending,
+                data: response,
+                isSuccess,
+            } = usePatchUserState();
+            const selected: boolean = row.getValue() as boolean;
+            const [isSelected, setIsSelected] = useState<boolean>(selected);
+            useEffect(() => {
+                if (isSuccess) {
+                    console.log(response);
+                    toast.success("Statut Modifié", {
+                        description: `${response.message}`,
+                    });
+                }
+            }, [response, isSuccess]);
+            return (
+                <div className="flex flex-col gap-2">
+                    <Switch
+                        color="success"
+                        isSelected={isSelected}
+                        onValueChange={() => {
+                            patchUserState({
+                                userId: row.row.original.id as number,
+                                isActive: !isSelected,
+                            });
+                            setIsSelected(!isSelected);
+                        }}
+                        isDisabled={isPending}
+                    />
+                </div>
+            );
+        },
     },
 
     {
@@ -81,20 +119,7 @@ const AdminUser = () => {
     const { data: roles } = useFetchRoles();
     const { data: stackholders } = useFetchStackholder();
 
-    // const uniqueRoles = Array.from(
-    //     new Set(roles?.map((role: Role) => role.name))
-    // ).map((name) => {
-    //     return roles?.find((role: Role) => role.name === name);
-    // });
-
-    // const uniqueStack = Array.from(
-    //     new Set(stackholders?.map((item: Stackholder) => item.name))
-    // ).map((name) => {
-    //     return stackholders?.find((item: Stackholder) => item.name === name);
-    // });
-    // console.log("stack :", uniqueStack);
-
-    // if (isLoading) return <p>Loading...</p>;
+    console.log(roles);
 
     return (
         <div className="w-full flex h-full overflow-hidden relative py-1 flex-col gap-3">
@@ -140,13 +165,20 @@ const AdminUser = () => {
                                         </Button>
                                     </DropdownTrigger>
                                     <DropdownMenu aria-label="Nested menu">
-                                        {roles?.map((role: Role) => (
+                                        {roles?.map((rol: Role) => (
                                             <DropdownItem
-                                                key={role?.id}
-                                                onClick={() =>
-                                                    setRole(role?.id)
-                                                }>
-                                                {role?.name}
+                                                className={
+                                                    rol?.id === role
+                                                        ? "bg-primary text-white"
+                                                        : ""
+                                                }
+                                                key={rol?.id}
+                                                onClick={() => {
+                                                    return rol?.id === role
+                                                        ? setRole(undefined)
+                                                        : setRole(rol?.id);
+                                                }}>
+                                                {rol?.name}
                                             </DropdownItem>
                                         ))}
                                     </DropdownMenu>

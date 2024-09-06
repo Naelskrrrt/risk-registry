@@ -18,17 +18,20 @@ import {
     TableHeader,
     TableRow,
 } from "@/presentation/components/ui/table";
+import Loader from "./loader/loader";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     isLoading: boolean;
+    ListPerPage?: number;
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
     isLoading,
+    ListPerPage,
 }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
         data,
@@ -36,12 +39,12 @@ export function DataTable<TData, TValue>({
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        initialState: { pagination: { pageSize: 8 } },
+        initialState: { pagination: { pageSize: ListPerPage } },
     });
 
     return (
-        <div className="rounded-md border  h-full relative">
-            <Table className="border h-full relative">
+        <div className="rounded-md border  h-full relative ">
+            <Table className="border w-full min-w-full">
                 <TableHeader className="bg-nextblue-50 font-bold text-nextblue-500 hover:bg-nextblue-100">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow
@@ -67,11 +70,11 @@ export function DataTable<TData, TValue>({
                 </TableHeader>
                 <TableBody className="">
                     {isLoading ? (
-                        "Loading..."
+                        <Loader />
                     ) : table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
-                                className=""
+                                className="h-full relative w-full overflow-y-auto"
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}>
                                 {row.getVisibleCells().map((cell) => (
@@ -96,7 +99,7 @@ export function DataTable<TData, TValue>({
                 </TableBody>
             </Table>
 
-            <div className="flex justify-center p-2">
+            <div className="flex justify-center p-2 sticky bottom-5 left-0 w-full">
                 <Pagination
                     showControls
                     total={table.getPageCount()}

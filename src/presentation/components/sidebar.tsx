@@ -1,19 +1,20 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Tooltip } from "@nextui-org/tooltip";
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { useLocation } from "react-router-dom"; // Importez useLocation
 import {
     RISKS_IA_NAVIGATION,
     RISKS_IT_NAVIGATION,
     USER_MANAGEMENT_NAVIGATION,
 } from "@/constants/global-nav"; // Importez les constantes
+import { useAuth } from "@/context/AuthProvider";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom"; // Importez useLocation
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isRisksIAOpen, setIsRisksIAOpen] = useState(false);
     const [isRisksITOpen, setIsRisksITOpen] = useState(false);
     const location = useLocation(); // Utilisez useLocation pour obtenir l'URL actuelle
+    const { user } = useAuth();
 
     const submenuVariants = {
         hidden: { opacity: 0, height: 0 },
@@ -56,12 +57,17 @@ const Sidebar = () => {
             </div>
             <div className="mt-8 w-full h-fit flex flex-col gap-1">
                 {/* Risks Identification & Assessment */}
-                <Tooltip
-                    content={RISKS_IA_NAVIGATION.label}
-                    placement="right"
-                    className={`${isCollapsed ? "block" : "hidden"}`}>
-                    <div
-                        className={`flex w-full items-center gap-1 text-slate-500 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer hover:bg-white/80`}
+                {(user?.role_id === 3 || user?.role_id === 1) && (
+                    <Link
+                        to={RISKS_IA_NAVIGATION.submenus[0].path}
+                        className={`flex w-full items-center gap-1 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer ${
+                            isLinkActive(
+                                RISKS_IA_NAVIGATION.submenus[0].path
+                            ) ||
+                            isLinkActive(RISKS_IA_NAVIGATION.submenus[1].path)
+                                ? "bg-nextblue-100/50 text-nextblue-500 font-semibold"
+                                : "text-slate-500 font-medium"
+                        }`}
                         onClick={() => setIsRisksIAOpen(!isRisksIAOpen)}>
                         <div className="flex p-2">
                             <Icon
@@ -86,8 +92,8 @@ const Sidebar = () => {
                                 </div>
                             </>
                         )}
-                    </div>
-                </Tooltip>
+                    </Link>
+                )}
                 <AnimatePresence initial={false}>
                     {isRisksIAOpen && !isCollapsed && (
                         <motion.div
@@ -100,10 +106,10 @@ const Sidebar = () => {
                                 (submenu, index) => (
                                     <div
                                         key={index}
-                                        className={`flex w-full items-center gap-3 text-slate-600 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer hover:bg-white/80 ${
+                                        className={`flex w-full items-center gap-3  py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer ${
                                             isLinkActive(submenu.path)
                                                 ? "bg-nextblue-50 text-nextblue-500"
-                                                : ""
+                                                : "text-slate-600 hover:bg-white/80 "
                                         }`}>
                                         <div className="flex p-2">
                                             <Icon
@@ -111,9 +117,11 @@ const Sidebar = () => {
                                                 fontSize={"24px"}
                                             />
                                         </div>
-                                        <span className="text-[14px] font-medium w-full">
+                                        <Link
+                                            to={submenu.path}
+                                            className="text-[14px] font-medium w-full">
                                             {submenu.label}
-                                        </span>
+                                        </Link>
                                     </div>
                                 )
                             )}
@@ -122,12 +130,17 @@ const Sidebar = () => {
                 </AnimatePresence>
 
                 {/* Risks IT */}
-                <Tooltip
-                    content={RISKS_IT_NAVIGATION.label}
-                    placement="right"
-                    className={`${isCollapsed ? "block" : "hidden"}`}>
-                    <div
-                        className={`flex w-full items-center gap-1 text-slate-500 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer hover:bg-white/80 `}
+                {(user?.role_id === 2 || user?.role_id === 1) && (
+                    <Link
+                        to={RISKS_IT_NAVIGATION.submenus[0].path}
+                        className={`flex w-full items-center gap-1 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer ${
+                            isLinkActive(
+                                RISKS_IT_NAVIGATION.submenus[0].path
+                            ) ||
+                            isLinkActive(RISKS_IT_NAVIGATION.submenus[1].path)
+                                ? "bg-nextblue-100/50 text-nextblue-500 font-semibold"
+                                : "text-slate-500 font-medium"
+                        }`}
                         onClick={() => setIsRisksITOpen(!isRisksITOpen)}>
                         <div className="flex p-2">
                             <Icon
@@ -152,8 +165,8 @@ const Sidebar = () => {
                                 </div>
                             </>
                         )}
-                    </div>
-                </Tooltip>
+                    </Link>
+                )}
                 <AnimatePresence initial={false}>
                     {isRisksITOpen && !isCollapsed && (
                         <motion.div
@@ -166,10 +179,10 @@ const Sidebar = () => {
                                 (submenu, index) => (
                                     <div
                                         key={index}
-                                        className={`flex w-full items-center gap-3 text-slate-600 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer hover:bg-white/80 ${
+                                        className={`flex w-full items-center gap-3  py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer hover:bg-white/80 ${
                                             isLinkActive(submenu.path)
                                                 ? "bg-nextblue-50 text-nextblue-500"
-                                                : ""
+                                                : "text-slate-600"
                                         }`}>
                                         <div className="flex p-2">
                                             <Icon
@@ -188,11 +201,9 @@ const Sidebar = () => {
                 </AnimatePresence>
 
                 {/* Gestion Utilisateurs */}
-                <Tooltip
-                    content={USER_MANAGEMENT_NAVIGATION.label}
-                    placement="right"
-                    className={`${isCollapsed ? "block" : "hidden"}`}>
-                    <div
+                {user?.role_id === 1 && (
+                    <Link
+                        to={USER_MANAGEMENT_NAVIGATION.path}
                         className={`flex w-full items-center gap-1 py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer ${
                             isLinkActive(USER_MANAGEMENT_NAVIGATION.path)
                                 ? "bg-nextblue-100/50 text-nextblue-500 font-semibold"
@@ -209,8 +220,8 @@ const Sidebar = () => {
                                 {USER_MANAGEMENT_NAVIGATION.label}
                             </span>
                         )}
-                    </div>
-                </Tooltip>
+                    </Link>
+                )}
             </div>
         </aside>
     );

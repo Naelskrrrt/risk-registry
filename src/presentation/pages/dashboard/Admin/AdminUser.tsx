@@ -1,13 +1,18 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+import { useAuth } from "@/context/AuthProvider";
 import {
+    useExportToExcel,
     useFetchRoles,
     useFetchStackholder,
     useFilteredUsers,
-} from "@/hooks/useFetchUsers";
-import { usePatchUserState } from "@/hooks/useHandleUsers";
+} from "@/hooks/Users/useFetchUsers";
+import { usePatchUserState } from "@/hooks/Users/useHandleUsers";
+import { formatDate } from "@/lib/formatDate";
 import { DataTable } from "@/presentation/components/globalTable";
+import Loader from "@/presentation/components/loader/loader";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Button } from "@nextui-org/button";
+import { DateRangePicker } from "@nextui-org/date-picker";
 import {
     Dropdown,
     DropdownItem,
@@ -16,11 +21,12 @@ import {
 } from "@nextui-org/dropdown";
 import { Input } from "@nextui-org/input";
 import { Switch } from "@nextui-org/switch";
-import { Tooltip } from "@nextui-org/tooltip";
 import { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Role, Stackholder, User } from "./constant/constant";
+import { UserDialog } from "./components/userDialog";
+import FileImportDialog from "./components/fileDialog";
 
 const columns: ColumnDef<User>[] = [
     {
@@ -63,6 +69,7 @@ const columns: ColumnDef<User>[] = [
             } = usePatchUserState();
             const selected: boolean = row.getValue() as boolean;
             const [isSelected, setIsSelected] = useState<boolean>(selected);
+            const { user } = useAuth();
             useEffect(() => {
                 if (isSuccess) {
                     console.log(response);
@@ -71,6 +78,9 @@ const columns: ColumnDef<User>[] = [
                     });
                 }
             }, [response, isSuccess]);
+            const userId = row.row.original.id;
+            const currentUserId = user?.user_id;
+            if (userId === currentUserId) return null;
             return (
                 <div className="flex flex-col gap-2">
                     <Switch
@@ -93,14 +103,35 @@ const columns: ColumnDef<User>[] = [
     {
         accessorKey: "action",
         header: "",
-        cell: () => {
+        cell: (row) => {
+            const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+            console.log(row.row.original);
+            const { id, session, name, email, role, stackholder } =
+                row.row.original;
+            const defaultValue = {
+                id,
+                session,
+                name,
+                email,
+                role,
+                stackholder,
+            };
             return (
-                <Button
-                    variant="light"
-                    color="primary"
-                    isIconOnly
-                    startContent={<Icon icon="solar:pen-outline" />}
-                />
+                <>
+                    <Button
+                        onClick={() => setDialogOpen(true)}
+                        variant="light"
+                        color="primary"
+                        isIconOnly
+                        startContent={<Icon icon="solar:pen-outline" />}
+                    />
+                    <UserDialog
+                        // refetch={refetch}
+                        defaultValues={defaultValue}
+                        isDialogOpen={dialogOpen}
+                        setIsDialogOpen={setDialogOpen}
+                    />
+                </>
             );
         },
     },
@@ -110,35 +141,106 @@ const AdminUser = () => {
     const [search, setSearch] = useState<string>("");
     const [role, setRole] = useState<number>();
     const [stackholder, setStackholder] = useState<number>();
+    const [dateRange, dateRangeSet] = useState<string>();
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
-    const { data: users, isLoading } = useFilteredUsers({
+    const {
+        data: users,
+        isLoading,
+        refetch,
+    } = useFilteredUsers({
         search,
         role,
         stackholder,
+        date: dateRange,
     });
+
+    const { mutate: exportToExcel, isPending: waitExport } = useExportToExcel({
+        search,
+        role,
+        stackholder,
+        date: dateRange,
+    });
+
     const { data: roles } = useFetchRoles();
     const { data: stackholders } = useFetchStackholder();
 
     console.log(roles);
 
+    const resetFilters = () => {
+        setSearch("");
+        setRole(undefined);
+        setStackholder(undefined);
+        dateRangeSet("");
+    };
+
+    const refreshData = async () => {
+        try {
+            // Réinitialiser les filtres
+            resetFilters();
+
+            // Appel à refetch pour obtenir les données les plus récentes
+            await refetch();
+
+            // Optionnel : Afficher une notification de succès
+
+            toast.success("Données rafraîchies", {
+                description: "Les données ont été mises à jour avec succès.",
+            });
+        } catch (error) {
+            // Afficher une notification d'erreur
+            console.log(error);
+            toast.error("Erreur de rafraîchissement", {
+                description:
+                    "Impossible de rafraîchir les données. Veuillez réessayer.",
+            });
+        }
+    };
     return (
         <div className="w-full flex h-full overflow-hidden relative py-1 flex-col gap-3">
             <div className="w-full flex justify-between h-fit ">
-                <div className="flex gap-2">
+                <div className="flex gap-2 h-full relative">
                     <Input
                         startContent={<Icon icon="solar:magnifer-outline" />}
                         placeholder="Search ..."
                         color="primary"
-                        size="md"
+                        size="lg"
                         classNames={{ input: "rounded-lg w-[250px]" }}
+                        value={search} // Ajout de la valeur de l'input
                         onChange={(e) => setSearch(e.target.value)}
+                        endContent={
+                            search && (
+                                <Icon
+                                    icon="solar:close-circle-line-duotone"
+                                    fontSize={22}
+                                    onClick={() => setSearch("")}
+                                    className="cursor-pointer"
+                                />
+                            )
+                        }
+                    />
+                    <DateRangePicker
+                        label="Filtrer le Date d'ajout"
+                        // defaultValue={{
+                        //     start: { date: defaultStartDate },
+                        //     end: { date: defaultEndDate },
+                        // }}
+                        color="primary"
+                        onChange={(date) => {
+                            const start = formatDate(date.start);
+                            const end = formatDate(date.end);
+                            dateRangeSet(`${start},${end}`);
+                        }}
+                        className="h-full"
+                        size="sm"
                     />
                     <Dropdown placement="right-start">
                         <DropdownTrigger>
                             <Button
                                 color="primary"
                                 isIconOnly
-                                className="rounded-md">
+                                className="rounded-md"
+                                size="lg">
                                 <Icon
                                     icon={"solar:filter-bold-duotone"}
                                     fontSize={22}
@@ -232,41 +334,54 @@ const AdminUser = () => {
                     </Dropdown>
                 </div>
                 <div className="flex gap-2">
-                    <Tooltip
-                        content="Exporter"
-                        placement="left"
-                        color="primary">
-                        <Button
-                            isIconOnly={true}
-                            children={<Icon icon="solar:download-linear" />}
-                            className="bg-white text-slate-950 text-lg font-bold rounded-lg hover:bg-slate-50"
-                        />
-                    </Tooltip>
+                    <Button
+                        isIconOnly
+                        onClick={refreshData}
+                        variant="shadow"
+                        color="danger"
+                        title="Revalider les données"
+                        className="relative">
+                        <Icon icon={"solar:refresh-outline"} fontSize={22} />
+                    </Button>
+
+                    <Button
+                        isIconOnly={true}
+                        children={<Icon icon="solar:download-linear" />}
+                        className="bg-white text-slate-950 text-lg font-bold rounded-lg hover:bg-slate-50"
+                        onClick={() => exportToExcel()}
+                        disabled={waitExport}
+                        title="Exporter les utilisateurs"
+                    />
                     <Button
                         size="md"
-                        className="bg-nextblue-500 text-white   rounded-lg hover:bg-nextblue-600">
+                        className="bg-nextblue-500 text-white   rounded-lg hover:bg-nextblue-600"
+                        onClick={() => {
+                            setDialogOpen(true);
+                        }}>
                         Ajouter
                     </Button>
-                    <Button
-                        size="md"
-                        className="bg-slate-800 text-white   rounded-lg hover:bg-nextblue-900">
-                        Importer
-                    </Button>
+                    <FileImportDialog />
                 </div>
             </div>
 
             {/* <UserList /> */}
-            <div className="w-full h-full relative bg-transparent rounded-md overflow-hidden">
+            <div className="w-full h-full relative bg-transparent rounded-md ">
                 {isLoading ? (
-                    "loading..."
+                    <Loader />
                 ) : (
                     <DataTable
+                        ListPerPage={7}
                         isLoading={isLoading}
                         data={users ? users : []}
                         columns={columns}
                     />
                 )}
             </div>
+            <UserDialog
+                refetch={refreshData}
+                isDialogOpen={dialogOpen}
+                setIsDialogOpen={setDialogOpen}
+            />
         </div>
     );
 };

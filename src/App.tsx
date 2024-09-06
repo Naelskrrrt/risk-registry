@@ -2,6 +2,8 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import ProtectedRoute from "./core/secure/ProtectedRoute";
 import AdminUser from "./presentation/pages/dashboard/Admin/AdminUser";
+import Loader from "./presentation/components/loader/loader";
+import Guest from "./presentation/pages/dashboard/Guest/guest";
 
 const SignIn = lazy(() => import("./presentation/pages/auth/sign-in"));
 const DashboardLayout = lazy(
@@ -28,7 +30,7 @@ const Unauthorized = lazy(
     () => import("./presentation/pages/redirect/error/Unauthorized")
 );
 
-const roles: string[] = ["ADMIN", "RRA", "RIT", "VISITEUR"];
+const roles: string[] = ["ADMIN", "RRA", "RIR", "VISITEUR"];
 
 const router = createBrowserRouter([
     {
@@ -67,7 +69,7 @@ const router = createBrowserRouter([
             {
                 path: "risk-assessment",
                 element: (
-                    <ProtectedRoute allowedRoles={[roles[1]]}>
+                    <ProtectedRoute allowedRoles={[roles[0], roles[1]]}>
                         <Outlet />
                     </ProtectedRoute>
                 ),
@@ -87,7 +89,7 @@ const router = createBrowserRouter([
             {
                 path: "risk-it",
                 element: (
-                    <ProtectedRoute allowedRoles={[roles[2]]}>
+                    <ProtectedRoute allowedRoles={[roles[0], roles[2]]}>
                         <Outlet />
                     </ProtectedRoute>
                 ),
@@ -104,13 +106,33 @@ const router = createBrowserRouter([
                     },
                 ],
             },
+            {
+                path: "guest",
+                element: (
+                    <ProtectedRoute allowedRoles={[roles[3]]}>
+                        <Outlet />
+                    </ProtectedRoute>
+                ),
+                children: [
+                    {
+                        path: "identification",
+                        element: <Guest />,
+                        errorElement: <NotFound />,
+                    },
+                    // {
+                    //     path: "evaluation",
+                    //     element: <ItEvaluation />,
+                    //     errorElement: <NotFound />,
+                    // },
+                ],
+            },
         ],
     },
 ]);
 
 function App() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<Loader />}>
             <RouterProvider router={router} />
         </Suspense>
     );

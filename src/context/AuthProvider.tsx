@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 // contexts/AuthProvider.tsx
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { jwtDecode } from "jwt-decode";
@@ -8,6 +9,7 @@ import React, {
     useLayoutEffect,
     useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import authService from "../services/authService";
 import TokenService from "../services/tokenService";
 
@@ -110,8 +112,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 return accessToken;
             }
         } catch (error) {
-            console.log(error);
-            // return error;
+            const navigate = useNavigate();
+            navigate("/login");
+            console.error("RefreshToken Failed", error);
         }
     };
 

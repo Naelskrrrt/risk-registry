@@ -23,6 +23,58 @@ export type Role = {
     name: string;
 };
 
+export type Risk = {
+    id: number;
+    reference: string;
+    process: string;
+    subprocess: {
+        id: number;
+        process: string;
+        name: string;
+        description: string;
+        created_at: string;
+        updated_at: string;
+    } | null;
+    stackholder: string | null;
+    process_objectives: string;
+    inherent_risk_description: string;
+    risk_type: {
+        id: number;
+        name: string;
+        description: string;
+        created_at: string;
+        updated_at: string;
+    }[];
+    probability: number;
+    impact: number;
+    inherent_risk_level: string;
+    affected_area: {
+        id: number;
+        name: string;
+        description: string;
+        created_at: string;
+        updated_at: string;
+    }[];
+    controls_in_place: string;
+    category: {
+        id: number;
+        name: string;
+        description: string;
+        created_at: string;
+        updated_at: string;
+        of_control: boolean;
+    }[];
+    nature_of_control: string;
+    automatic_or_manual_control: string;
+    quality_of_the_control: string;
+    residual_risk_level: string;
+    risk_strategy: string;
+    detail_of_strategy: string;
+    date_of_assessment: string;
+    initiator: string;
+    created_at: string;
+};
+
 export const columns: ColumnDef<User>[] = [
     {
         accessorKey: "id",

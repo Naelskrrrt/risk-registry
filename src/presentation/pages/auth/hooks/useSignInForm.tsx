@@ -31,19 +31,43 @@ export const useSignInForm = () => {
     });
     const navigate = useNavigate();
     const location = useLocation();
-    const from = location.state?.from?.pathname || "/dashboard/admin";
+    const from = location.state?.from?.pathname || "/dashboard/";
 
     const toggleVisibility = () => setIsVisible(!isVisible);
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try {
-            const response: unknown = await login(data);
+            const response = await login(data);
 
-            if (response) {
+            console.log("Response", response.user);
+
+            if (response.user) {
                 toast.success("Connecté avec succès", {
-                    description: `Bienvenue, ${user?.email}`,
+                    description: `Bienvenue, ${response.user.email}`,
                 });
-                navigate(from, { replace: true });
+
+                // Redirection basée sur le rôle de l'utilisateur
+                switch (response.user.role_id) {
+                    case 1:
+                        navigate("/dashboard/admin", { replace: true });
+                        break;
+                    case 2:
+                        navigate("/dashboard/risk-it/identification", {
+                            replace: true,
+                        });
+                        break;
+                    case 3:
+                        navigate("/dashboard/risk-assessment/identification", {
+                            replace: true,
+                        });
+                        break;
+                    case 4:
+                        navigate("/dashboard/guest", { replace: true });
+                        break;
+                    default:
+                        navigate(from, { replace: true }); // Par défaut, rediriger vers le `from`
+                        break;
+                }
             }
         } catch (error: unknown) {
             console.log("Error: ", error);

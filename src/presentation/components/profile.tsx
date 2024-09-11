@@ -16,7 +16,7 @@ const Profile = () => {
     };
     return (
         <PopoverContent>
-            <div className="w-[350px] h-[303px] p-5 py-7     flex flex-col items-center gap-8">
+            <div className="w-fit h-fit p-7 py-7 flex flex-col items-center gap-8">
                 <div className="flex flex-col gap-3 w-full items-center">
                     <img
                         src="/src/presentation/assets/image/avatar.png"
@@ -25,7 +25,7 @@ const Profile = () => {
                     />
                     <div className="flex w-full flex-col items-center ">
                         <h1 className="text-xl font-medium text-slate-950">
-                            Bonjour, {user?.session} !
+                            Bonjour, {user?.user_name} !
                         </h1>
                         <p className="text-slate-500 text-md font-regular">
                             {user?.stackholder_title}

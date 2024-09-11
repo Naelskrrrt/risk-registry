@@ -7,7 +7,7 @@ import Profile from "./profile";
 
 const Navbar = () => {
     return (
-        <div className="w-full h-16 flex items-center justify-end ">
+        <div className="w-full h-20 flex items-center justify-end ">
             <Popover placement={"bottom-end"} color="secondary">
                 <PopoverTrigger>
                     <Button

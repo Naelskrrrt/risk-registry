@@ -1,9 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* p {
-  font-family: 'DM Sans Variable', sans-serif;
-} */
+
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 8px;
+  background-color: #cce3fd;
+  /* border: 1px solid #cacaca; */
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background-color: #006FEE;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

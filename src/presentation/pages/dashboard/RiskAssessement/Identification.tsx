@@ -1,4 +1,12 @@
-import { useAuth } from "@/context/AuthProvider";
+import {
+    useFetchProcess,
+    useFetchSubprocess,
+    useFilteredRIA,
+} from "@/hooks/RIA/useFetchRIA";
+import { useFetchStackholder } from "@/hooks/Users/useFetchUsers";
+import { formatDate } from "@/lib/formatDate";
+import { DataTable } from "@/presentation/components/globalTable";
+import Loader from "@/presentation/components/loader/loader";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Button } from "@nextui-org/button";
 import { DateRangePicker } from "@nextui-org/date-picker";
@@ -9,155 +17,74 @@ import {
     DropdownTrigger,
 } from "@nextui-org/dropdown";
 import { Input } from "@nextui-org/input";
-import FileImportDialog from "../Admin/components/fileDialog";
-import { DataTable } from "@/presentation/components/globalTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { Risk } from "../Admin/constant/constant";
-import { useFilteredRIA } from "@/hooks/RIA/useFetchRIA";
-
-const columns: ColumnDef<Risk>[] = [
-    {
-        accessorKey: "id",
-        header: "ID",
-    },
-    {
-        accessorKey: "date_of_assessment",
-        header: "Date d'Évaluation",
-    },
-    {
-        accessorKey: "initiator",
-        header: "Initiateur",
-    },
-    {
-        accessorKey: "reference",
-        header: "Référence",
-    },
-    {
-        accessorKey: "process",
-        header: "Processus",
-    },
-    {
-        accessorFn: (row) => row.subprocess?.name,
-        id: "subprocess",
-        header: "Sous-processus",
-        cell: (info) => info.getValue(),
-    },
-    {
-        accessorKey: "process_objectives",
-        header: "Objectifs du Processus",
-    },
-    {
-        accessorKey: "inherent_risk_description",
-        header: "Description du Risque Inhérent",
-    },
-    {
-        accessorFn: (row) => row.risk_type?.map((r) => r.name).join(", "),
-        id: "risk_type",
-        header: "Type de Risque",
-        cell: (info) => info.getValue(),
-    },
-    {
-        accessorKey: "probability",
-        header: "Probabilité",
-    },
-    {
-        accessorKey: "impact",
-        header: "Impact",
-    },
-    {
-        accessorKey: "inherent_risk_level",
-        header: "Niveau de Risque Inhérent",
-    },
-    {
-        accessorFn: (row) => row.affected_area?.map((a) => a.name).join(", "),
-        id: "affected_area",
-        header: "Zone Affectée",
-        cell: (info) => info.getValue(),
-    },
-    {
-        accessorKey: "controls_in_place",
-        header: "Contrôles en Place",
-    },
-    {
-        accessorFn: (row) => row.category?.map((c) => c.name).join(", "),
-        id: "category",
-        header: "Catégorie",
-        cell: (info) => info.getValue(),
-    },
-    {
-        accessorKey: "nature_of_control",
-        header: "Nature du Contrôle",
-    },
-    {
-        accessorKey: "automatic_or_manual_control",
-        header: "Type de Contrôle (Automatique/Manuel)",
-    },
-    {
-        accessorKey: "quality_of_the_control",
-        header: "Qualité du Contrôle",
-    },
-    {
-        accessorKey: "residual_risk_level",
-        header: "Niveau de Risque Résiduel",
-    },
-    {
-        accessorKey: "risk_strategy",
-        header: "Stratégie de Risque",
-    },
-    {
-        accessorKey: "detail_of_strategy",
-        header: "Détails de la Stratégie",
-    },
-    {
-        accessorKey: "date_of_assessment",
-        header: "Date d'Évaluation",
-    },
-    {
-        accessorKey: "initiator",
-        header: "Initiateur",
-    },
-    {
-        accessorKey: "action",
-        header: "Actions",
-        cell: (row) => {
-            // const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-            // const { id, reference, process, subprocess, process_objectives } =
-            //     row.row.original;
-            // const defaultValue = {
-            //     id,
-            //     reference,
-            //     process,
-            //     subprocess,
-            //     process_objectives,
-            // };
-            return (
-                <>
-                    <Button
-                        // onClick={() => setDialogOpen(true)}
-                        variant="light"
-                        color="primary"
-                        isIconOnly
-                        startContent={<Icon icon="solar:pen-outline" />}
-                    />
-                    {/* <RiskDialog
-                        defaultValues={defaultValue}
-                        isDialogOpen={dialogOpen}
-                        setIsDialogOpen={setDialogOpen}
-                    /> */}
-                </>
-            );
-        },
-    },
-];
+import { useState } from "react";
+import { toast } from "sonner";
+import { Risk, Stackholder } from "../Admin/constant/constant";
+import { columns } from "./Column";
 
 const Identification = () => {
-    const { user } = useAuth();
-    console.log(user);
-    const { data: ria, isLoading, refetch } = useFilteredRIA({});
+    const [search, setSearch] = useState<string>("");
+    const [dateRange, dateRangeSet] = useState<string>();
+    const [stackholder, setStackholder] = useState<number>();
+    const [process_state, setProcessState] = useState<number>();
+    const [level_state, setLevel] = useState<string>();
+    const [subprocess_state, setSubprocess] = useState<number>();
+    // search = "",
+    // date = "",
+    // process = "",
+    // subprocess = "",
+    // stackholder = null,
+    // inherent_risk_level = "",
+
+    const LEVEL = ["low", "medium", "high"];
+
+    const {
+        data: ria,
+        isLoading,
+        refetch,
+    } = useFilteredRIA({
+        search,
+        stackholder,
+        subprocess: subprocess_state,
+        inherent_risk_level: level_state,
+        process: process_state,
+        date: dateRange,
+    });
+
+    const { data: stackholders, isPending } = useFetchStackholder();
+    const { data: process, isPending: processPending } = useFetchProcess();
+
+    const resetFilters = () => {
+        setSearch("");
+        // setRole(undefined);
+        setSubprocess(undefined);
+        setLevel("");
+        setProcessState(undefined);
+        setStackholder(undefined);
+        dateRangeSet("");
+    };
+
+    const refreshData = async () => {
+        try {
+            resetFilters();
+            await refetch();
+
+            toast.success("Données rafraîchies", {
+                description: "Les données ont été mises à jour avec succès.",
+            });
+        } catch (error) {
+            console.log(error);
+            toast.error("Erreur de rafraîchissement", {
+                description:
+                    "Impossible de rafraîchir les données. Veuillez réessayer.",
+            });
+        }
+    };
     return (
-        <div className="w-full flex h-full overflow-hidden py-1 flex-col gap-3">
-            <div className="w-full relative flex justify-between h-fit overflow-x-auto">
-                <div className="flex gap-2 h-full relative py-1">
+        <div className="w-full flex h-full relative overflow-hidden py-1 flex-col gap-3 ">
+            <div className="w-full  flex justify-between h-fit overflow-x-auto items-center px-2 flex-wrap ">
+                <div className="flex gap-2 h-full relative py-1 overflow-visible">
                     <Input
                         startContent={<Icon icon="solar:magnifer-outline" />}
                         placeholder="Search ..."
@@ -166,21 +93,17 @@ const Identification = () => {
                         classNames={{
                             input: "rounded-lg w-[250px]",
                         }}
-                        // value={search} // Ajout de la valeur de l'input
-                        // onChange={(e) => setSearch(e.target.value)}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                     <DateRangePicker
                         label="Filtrer le Date d'ajout"
-                        // defaultValue={{
-                        //     start: { date: defaultStartDate },
-                        //     end: { date: defaultEndDate },
-                        // }}
                         color="primary"
-                        // onChange={(date) => {
-                        //     const start = formatDate(date.start);
-                        //     const end = formatDate(date.end);
-                        //     dateRangeSet(`${start},${end}`);
-                        // }}
+                        onChange={(date) => {
+                            const start = formatDate(date.start);
+                            const end = formatDate(date.end);
+                            dateRangeSet(`${start},${end}`);
+                        }}
                         className="h-full"
                         size="sm"
                     />
@@ -200,7 +123,7 @@ const Identification = () => {
                         <DropdownMenu
                             aria-label="Main menu"
                             closeOnSelect={false}>
-                            <DropdownItem key="nested">
+                            <DropdownItem key="process">
                                 <Dropdown placement="right-start">
                                     <DropdownTrigger className="p-0 ">
                                         <Button
@@ -209,35 +132,58 @@ const Identification = () => {
                                             startContent={
                                                 <Icon
                                                     icon={
-                                                        "solar:user-bold-duotone"
+                                                        "solar:folder-with-files-outline"
                                                     }
                                                 />
                                             }>
-                                            Role
+                                            Process
                                         </Button>
                                     </DropdownTrigger>
-                                    <DropdownMenu aria-label="Nested menu">
-                                        <DropdownItem>Role</DropdownItem>
-                                        {/* {roles?.map((rol: Role) => (
-                                            <DropdownItem
-                                                className={
-                                                    rol?.id === role
-                                                        ? "bg-primary text-white"
-                                                        : ""
-                                                }
-                                                key={rol?.id}
-                                                onClick={() => {
-                                                    return rol?.id === role
-                                                        ? setRole(undefined)
-                                                        : setRole(rol?.id);
-                                                }}>
-                                                {rol?.name}
-                                            </DropdownItem>
-                                        ))} */}
+                                    <DropdownMenu
+                                        aria-label="Nested menu"
+                                        className="max-h-96 overflow-y-auto">
+                                        {process?.map(
+                                            (proc: {
+                                                id: number;
+                                                name: string;
+                                                description: string;
+                                            }) => (
+                                                <DropdownItem
+                                                    className={
+                                                        proc?.id ===
+                                                        process_state
+                                                            ? "bg-primary text-white"
+                                                            : ""
+                                                    }
+                                                    key={proc?.id}
+                                                    onClick={() => {
+                                                        if (
+                                                            proc?.id ===
+                                                            process_state
+                                                        ) {
+                                                            setSubprocess(
+                                                                undefined
+                                                            );
+                                                            setProcessState(
+                                                                undefined
+                                                            );
+                                                        } else {
+                                                            setSubprocess(
+                                                                undefined
+                                                            );
+                                                            setProcessState(
+                                                                proc?.id
+                                                            );
+                                                        }
+                                                    }}>
+                                                    {proc.id} - {proc?.name}
+                                                </DropdownItem>
+                                            )
+                                        )}
                                     </DropdownMenu>
                                 </Dropdown>
                             </DropdownItem>
-                            <DropdownItem key="nested item">
+                            <DropdownItem key="stackholders">
                                 <Dropdown placement="right-start">
                                     <DropdownTrigger className="p-0 ">
                                         <Button
@@ -257,40 +203,138 @@ const Identification = () => {
                                         <DropdownItem>
                                             Stakeholders
                                         </DropdownItem>
-                                        {/* {stackholders?.map(
-                                            (stack: Stackholder) => (
-                                                <DropdownItem
-                                                    className={
-                                                        stack?.id ===
-                                                        stackholder
-                                                            ? "bg-primary text-white"
-                                                            : ""
-                                                    }
-                                                    key={stack?.id}
-                                                    onClick={() => {
-                                                        return stack?.id ===
-                                                            stackholder
-                                                            ? setStackholder(
-                                                                  undefined
-                                                              )
-                                                            : setStackholder(
-                                                                  stack?.id
-                                                              );
-                                                    }}>
-                                                    {stack?.name}
-                                                </DropdownItem>
-                                            )
-                                        )} */}
+
+                                        {isPending
+                                            ? "Chargement..."
+                                            : stackholders?.map(
+                                                  (stack: Stackholder) => (
+                                                      <DropdownItem
+                                                          className={
+                                                              stack?.id ===
+                                                              stackholder
+                                                                  ? "bg-primary text-white"
+                                                                  : ""
+                                                          }
+                                                          key={stack?.id}
+                                                          onClick={() => {
+                                                              return stack?.id ===
+                                                                  stackholder
+                                                                  ? setStackholder(
+                                                                        undefined
+                                                                    )
+                                                                  : setStackholder(
+                                                                        stack?.id
+                                                                    );
+                                                          }}>
+                                                          {stack?.name}
+                                                      </DropdownItem>
+                                                  )
+                                              )}
                                     </DropdownMenu>
                                 </Dropdown>
                             </DropdownItem>
+                            <DropdownItem key="level">
+                                <Dropdown placement="right-start">
+                                    <DropdownTrigger className="p-0 ">
+                                        <Button
+                                            variant="flat"
+                                            className=" text-left w-full bg-transparent flex justify-start gap-5 pl-2"
+                                            startContent={
+                                                <Icon
+                                                    icon={
+                                                        "solar:chart-2-outline"
+                                                    }
+                                                />
+                                            }>
+                                            Level
+                                        </Button>
+                                    </DropdownTrigger>
+                                    <DropdownMenu aria-label="Nested menu">
+                                        {LEVEL?.map((level) => (
+                                            <DropdownItem
+                                                className={
+                                                    level === level_state
+                                                        ? "bg-primary text-white"
+                                                        : ""
+                                                }
+                                                key={level}
+                                                onClick={() => {
+                                                    return level ===
+                                                        level_state?.toLowerCase()
+                                                        ? setLevel(undefined)
+                                                        : setLevel(level);
+                                                }}>
+                                                {level.toLocaleUpperCase()}
+                                            </DropdownItem>
+                                        ))}
+                                    </DropdownMenu>
+                                </Dropdown>
+                            </DropdownItem>
+                            {/* {process_state ? (
+                                <DropdownItem key="subprocess">
+                                    <Dropdown placement="right-start">
+                                        <DropdownTrigger className="p-0 ">
+                                            <Button
+                                                variant="flat"
+                                                className=" text-left w-full bg-transparent flex justify-start gap-5 pl-2"
+                                                startContent={
+                                                    <Icon
+                                                        icon={
+                                                            "solar:file-outline"
+                                                        }
+                                                    />
+                                                }>
+                                                Subprocess
+                                            </Button>
+                                        </DropdownTrigger>
+
+                                        <DropdownMenu aria-label="subprocess">
+                                            {subprocessPending
+                                                ? "Chargement"
+                                                : subprocess?.map(
+                                                      (sub: {
+                                                          id: number;
+                                                          process: string;
+                                                          name: string;
+                                                      }) => (
+                                                          <DropdownItem
+                                                              className={
+                                                                  sub.id ===
+                                                                  subprocess_state
+                                                                      ? "bg-primary text-white"
+                                                                      : ""
+                                                              }
+                                                              key={sub.id}
+                                                              onClick={() => {
+                                                                  return sub.id ===
+                                                                      subprocess_state
+                                                                      ? setSubprocess(
+                                                                            undefined
+                                                                        )
+                                                                      : setSubprocess(
+                                                                            sub.id
+                                                                        );
+                                                              }}>
+                                                              <span className="font-bold">
+                                                                  {sub.process}:
+                                                              </span>
+                                                              {sub.name}
+                                                          </DropdownItem>
+                                                      )
+                                                  )}
+                                        </DropdownMenu>
+                                    </Dropdown>
+                                </DropdownItem>
+                            ) : (
+                                <DropdownItem className="hidden"></DropdownItem>
+                            )} */}
                         </DropdownMenu>
                     </Dropdown>
                 </div>
                 <div className="flex gap-2">
                     <Button
                         isIconOnly
-                        // onClick={refreshData}
+                        onClick={refreshData}
                         variant="shadow"
                         color="danger"
                         title="Revalider les données"
@@ -301,32 +345,26 @@ const Identification = () => {
                     <Button
                         isIconOnly={true}
                         children={<Icon icon="solar:download-linear" />}
-                        className="bg-white text-slate-950 text-lg font-bold rounded-lg hover:bg-slate-50"
+                        className="text-white bg-slate-950 text-lg font-bold rounded-lg hover:bg-slate-900"
                         // onClick={() => exportToExcel()}
                         // disabled={waitExport}
                         title="Exporter les utilisateurs"
                     />
-                    <Button
-                        size="md"
-                        className="bg-nextblue-500 text-white   rounded-lg hover:bg-nextblue-600"
-                        // onClick={() => {
-                        //     setDialogOpen(true);
-                        // }}
-                    >
-                        Ajouter
-                    </Button>
-                    <FileImportDialog />
                 </div>
             </div>
 
             {/* <UserList /> */}
-            <div className="w-full h-full overflow-auto bg-transparent rounded-md">
-                <DataTable
-                    ListPerPage={5}
-                    isLoading={isLoading}
-                    data={ria ? ria : []}
-                    columns={columns}
-                />
+            <div className="w-full h-full relative  bg-transparent rounded-md">
+                {isLoading ? (
+                    <Loader />
+                ) : (
+                    <DataTable
+                        ListPerPage={5}
+                        isLoading={isLoading}
+                        data={ria ? ria : []}
+                        columns={columns as ColumnDef<Risk>[]}
+                    />
+                )}
             </div>
         </div>
     );

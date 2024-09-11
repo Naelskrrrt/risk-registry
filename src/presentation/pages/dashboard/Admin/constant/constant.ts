@@ -17,6 +17,18 @@ export type Stackholder = {
     name: string;
 };
 
+export type RiskTypes = {
+    id: number;
+    name: string;
+    description: string;
+};
+
+export type AffectedArea = {
+    id: number;
+    name: string;
+    description: string;
+};
+
 export type Role = {
     id: number;
     title: string;
@@ -35,7 +47,12 @@ export type Risk = {
         created_at: string;
         updated_at: string;
     } | null;
-    stackholder: string | null;
+    stackholder: {
+        id: number;
+        title: string;
+        name: string;
+        description: string;
+    };
     process_objectives: string;
     inherent_risk_description: string;
     risk_type: {

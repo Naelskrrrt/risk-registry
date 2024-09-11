@@ -1,5 +1,6 @@
 "use client";
 
+import { Pagination } from "@nextui-org/pagination";
 import {
     ColumnDef,
     flexRender,
@@ -8,7 +9,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { Pagination } from "@nextui-org/pagination";
+import React, { useEffect, useState } from "react";
 
 import {
     Table,
@@ -18,7 +19,14 @@ import {
     TableHeader,
     TableRow,
 } from "@/presentation/components/ui/table";
-import Loader from "./loader/loader";
+import { Button } from "@nextui-org/button";
+import {
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownTrigger,
+} from "@nextui-org/dropdown";
+import { useLocation } from "react-router-dom";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -30,55 +38,133 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
     columns,
     data,
-    isLoading,
+    // isLoading,
     ListPerPage,
 }: DataTableProps<TData, TValue>) {
+    // Gestion de la sélection des colonnes visibles
+    const [visibleColumns, setVisibleColumns] = useState<
+        ColumnDef<TData, TValue>[]
+    >(
+        columns.filter(
+            (column) => column.id === "action" || columns.indexOf(column) < 8
+        )
+    );
+
+    const toggleColumnVisibility = (column: ColumnDef<TData, TValue>) => {
+        if (column.id === "action") {
+            return;
+        }
+        if (visibleColumns.includes(column)) {
+            setVisibleColumns(visibleColumns.filter((col) => col !== column));
+        } else {
+            setVisibleColumns([...visibleColumns, column]);
+        }
+    };
+
     const table = useReactTable({
         data,
-        columns,
+        columns: visibleColumns,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: { pagination: { pageSize: ListPerPage } },
     });
 
+    useEffect(() => {
+        const initialSelectedKeys = new Set(
+            visibleColumns.map((col) => col?.id as string)
+        );
+
+        console.table(visibleColumns);
+        setSelectedKeys(initialSelectedKeys);
+    }, [visibleColumns]);
+
+    const [selectedKeys, setSelectedKeys] = React.useState<Set<string>>(
+        new Set()
+    );
+    const location = useLocation();
+
+    // const selectedValue = React.useMemo(
+    //     () => Array.from(selectedKeys).join(", ").replaceAll("_", " "),
+    //     [selectedKeys]
+    // );
+
     return (
-        <div className="rounded-md border  h-full relative ">
+        <div className="rounded-md border h-full w-full relative">
+            {/* Section de sélection des colonnes */}
+            {location.pathname === "/dashboard/admin" ? (
+                ""
+            ) : (
+                <div className="p-4 w-full h-fit relative flex justify-end ">
+                    <Dropdown suppressHydrationWarning>
+                        <DropdownTrigger>
+                            <Button
+                                variant="flat"
+                                color="primary"
+                                title="Selection de colonne">
+                                Colonnes à Afficher
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            color="primary"
+                            variant="flat"
+                            disallowEmptySelection
+                            selectionMode="multiple"
+                            selectedKeys={selectedKeys}
+                            closeOnSelect={false}
+                            suppressHydrationWarning
+                            className="h-fit overflow-y-auto w-full flex flex-col gap-2"
+                            classNames={{
+                                list: "w-full grid grid-cols-3 gap-2 p-2",
+                            }}
+                            disabledKeys={["action"]}
+                            // onSelectionChange={setSelectedKeys}
+                        >
+                            {columns.map((column) => (
+                                <DropdownItem
+                                    classNames={{}}
+                                    key={column.id}
+                                    onClick={() =>
+                                        toggleColumnVisibility(column)
+                                    }>
+                                    {column.header as string}
+                                </DropdownItem>
+                            ))}
+                        </DropdownMenu>
+                    </Dropdown>
+                </div>
+            )}
+
+            {/* Table de données */}
             <Table className="border w-full min-w-full">
-                <TableHeader className="bg-nextblue-50 font-bold text-nextblue-500 hover:bg-nextblue-100">
+                <TableHeader className="bg-nextblue-50 font-bold sticky top-0 text-nextblue-500 hover:bg-nextblue-100">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow
                             key={headerGroup.id}
-                            className=" bg-nextblue-100">
-                            {headerGroup.headers.map((header) => {
-                                return (
-                                    <TableHead
-                                        className="text-nextblue-500"
-                                        key={header.id}>
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                  header.column.columnDef
-                                                      .header,
-                                                  header.getContext()
-                                              )}
-                                    </TableHead>
-                                );
-                            })}
+                            className="bg-nextblue-100">
+                            {headerGroup.headers.map((header) => (
+                                <TableHead
+                                    className="text-nextblue-500"
+                                    key={header.id}>
+                                    {header.isPlaceholder
+                                        ? null
+                                        : flexRender(
+                                              header.column.columnDef.header,
+                                              header.getContext()
+                                          )}
+                                </TableHead>
+                            ))}
                         </TableRow>
                     ))}
                 </TableHeader>
-                <TableBody className="">
-                    {isLoading ? (
-                        <Loader />
-                    ) : table.getRowModel().rows?.length ? (
+                <TableBody className="max-h-[500px] overflow-y-auto">
+                    {table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
-                            <TableRow
-                                className="h-full relative w-full overflow-y-auto"
-                                key={row.id}
-                                data-state={row.getIsSelected() && "selected"}>
+                            <TableRow key={row.id} className="relative w-full">
                                 {row.getVisibleCells().map((cell) => (
-                                    <TableCell key={cell.id}>
+                                    <TableCell
+                                        key={cell.id}
+                                        className="min-w-32">
                                         {flexRender(
                                             cell.column.columnDef.cell,
                                             cell.getContext()
@@ -99,7 +185,13 @@ export function DataTable<TData, TValue>({
                 </TableBody>
             </Table>
 
-            <div className="flex justify-center p-2 sticky bottom-5 left-0 w-full">
+            {/* Pagination */}
+            <div
+                className={`flex justify-center p-2 absolute ${
+                    location.pathname === "/dashboard/admin"
+                        ? "bottom-2 w-full"
+                        : "top-2 left-3"
+                }  opacity-50 hover:opacity-100`}>
                 <Pagination
                     showControls
                     total={table.getPageCount()}

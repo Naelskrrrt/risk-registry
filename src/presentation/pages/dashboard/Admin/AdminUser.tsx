@@ -31,18 +31,22 @@ import FileImportDialog from "./components/fileDialog";
 const columns: ColumnDef<User>[] = [
     {
         accessorKey: "id",
+        id: "id",
         header: "ID",
     },
     {
         accessorKey: "session",
+        id: "session",
         header: "Session",
     },
     {
         accessorKey: "name",
+        id: "name",
         header: "Nom",
     },
     {
         accessorKey: "email",
+        id: "email",
         header: "Email",
     },
     {
@@ -59,6 +63,7 @@ const columns: ColumnDef<User>[] = [
     },
     {
         accessorKey: "is_active",
+        id: "is_active",
         header: "Statut",
         cell: (row) => {
             const {
@@ -102,6 +107,7 @@ const columns: ColumnDef<User>[] = [
 
     {
         accessorKey: "action",
+        id: "action",
         header: "",
         cell: (row) => {
             const [dialogOpen, setDialogOpen] = useState<boolean>(false);
@@ -141,7 +147,7 @@ const AdminUser = () => {
     const [search, setSearch] = useState<string>("");
     const [role, setRole] = useState<number>();
     const [stackholder, setStackholder] = useState<number>();
-    const [dateRange, dateRangeSet] = useState<string>();
+    const [dateRange, dateRangeSet] = useState<string>("");
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
     const {
@@ -221,10 +227,6 @@ const AdminUser = () => {
                     />
                     <DateRangePicker
                         label="Filtrer le Date d'ajout"
-                        // defaultValue={{
-                        //     start: { date: defaultStartDate },
-                        //     end: { date: defaultEndDate },
-                        // }}
                         color="primary"
                         onChange={(date) => {
                             const start = formatDate(date.start);

@@ -87,7 +87,6 @@ export const UserDialog = ({
         },
         resolver: zodResolver(userSchema),
     });
-    console.log(defaultValues);
 
     const { data: roles, isPending: rolePending } = useFetchRoles();
     const { data: stackholders, isPending: stackPending } =
@@ -128,8 +127,6 @@ export const UserDialog = ({
         });
     };
 
-    console.log(refetch);
-
     const onUpdate = (data: UserFormFields) => {
         updateUser(
             { id: defaultValues?.id, data },
@@ -142,17 +139,6 @@ export const UserDialog = ({
                     resetValue();
                     if (refetch) return refetch();
                 },
-                // onError: (error: any) => {
-                //     console.log("Error", error);
-                //     const errorMessage =
-                //         error.response?.data &&
-                //         typeof error.response.data === "object"
-                //             ? JSON.stringify(error.response.data, null, 2)
-                //             : error.response?.data || "Erreur inconnue";
-                //     toast.error("Erreur lors de la création de l'utilisateur", {
-                //         description: errorMessage,
-                //     });
-                // },
             }
         );
     };

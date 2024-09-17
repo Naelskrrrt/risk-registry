@@ -75,7 +75,6 @@ export function DataTable<TData, TValue>({
             visibleColumns.map((col) => col?.id as string)
         );
 
-        console.table(visibleColumns);
         setSelectedKeys(initialSelectedKeys);
     }, [visibleColumns]);
 
@@ -83,11 +82,6 @@ export function DataTable<TData, TValue>({
         new Set()
     );
     const location = useLocation();
-
-    // const selectedValue = React.useMemo(
-    //     () => Array.from(selectedKeys).join(", ").replaceAll("_", " "),
-    //     [selectedKeys]
-    // );
 
     return (
         <div className="rounded-md border h-full w-full relative">
@@ -178,7 +172,9 @@ export function DataTable<TData, TValue>({
                             <TableCell
                                 colSpan={columns.length}
                                 className="h-24 text-center">
-                                No results.
+                                <span className="text-red-500">
+                                    Aucun élément trouvé.
+                                </span>
                             </TableCell>
                         </TableRow>
                     )}

@@ -5,11 +5,10 @@ import { PopoverContent } from "@nextui-org/popover";
 
 const Profile = () => {
     const { user, logout } = useAuth();
-    console.log(user);
     const handleLogout = async () => {
         try {
             const response = await logout();
-            console.log("Logout response: ", response);
+            return response;
         } catch (error) {
             console.log(error);
         }

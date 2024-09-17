@@ -17,7 +17,7 @@ type FormFields = z.infer<typeof schema>;
 
 export const useSignInForm = () => {
     const [isVisible, setIsVisible] = useState(false);
-    const { login, user } = useAuth();
+    const { login } = useAuth();
     const {
         register,
         handleSubmit,
@@ -38,8 +38,6 @@ export const useSignInForm = () => {
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try {
             const response = await login(data);
-
-            console.log("Response", response.user);
 
             if (response.user) {
                 toast.success("Connecté avec succès", {
@@ -70,7 +68,6 @@ export const useSignInForm = () => {
                 }
             }
         } catch (error: unknown) {
-            console.log("Error: ", error);
             if (error) {
                 toast.error("Erreur lors de la connexion", {
                     description:
@@ -82,7 +79,6 @@ export const useSignInForm = () => {
         }
     };
 
-    console.log(user);
     return {
         register,
         handleSubmit,

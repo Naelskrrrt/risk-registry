@@ -1,34 +1,18 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/presentation/components/ui/dialog";
 import { Button } from "@nextui-org/button";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { RiaDialog } from "../dashboard/RiskAssessement/components/riaDialog";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import { useState } from "react";
 
 const HomePage = () => {
     // useAuthRedirect();
     const navigate = useNavigate();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+
     return (
         <div>
             <p>Home Page</p>
-            <Button onClick={() => setIsDialogOpen(true)} />
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Are you absolutely sure?</DialogTitle>
-                        <DialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete your account and remove your data from our
-                            servers.
-                        </DialogDescription>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
+
             <Button
                 className="rounded-md"
                 color="primary"
@@ -37,6 +21,20 @@ const HomePage = () => {
                 }}>
                 Se Connecter
             </Button>
+
+            <Button
+                onClick={() => setDialogOpen(true)}
+                variant="light"
+                color="warning"
+                isIconOnly
+                startContent={<Icon icon="solar:calendar-outline" />}
+            />
+            <RiaDialog
+                // refetch={refetch}
+                // defaultValues={{}}
+                isDialogOpen={dialogOpen}
+                setIsDialogOpen={setDialogOpen}
+            />
         </div>
     );
 };

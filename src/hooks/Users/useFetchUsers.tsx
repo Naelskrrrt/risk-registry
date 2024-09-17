@@ -35,7 +35,6 @@ export const useFetchStackholder = () => {
 };
 
 export const useExportToExcel = (filters: UserFilterParams) => {
-    console.log("Filters", filters);
     return useMutation({
         mutationFn: async () => {
             const data = await fetchExportToExcel(filters);

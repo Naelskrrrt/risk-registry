@@ -75,13 +75,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         onSuccess: (data) => {
             TokenService.setAccessToken(data.access);
             TokenService.setRefreshToken(data.refresh);
-            console.log(data);
             setUser(data.user);
             setIsAuthenticated(true);
-            console.log("Login Success", data.user);
         },
         onError: (error) => {
-            console.log("Login Failed", error);
             return error.message;
         },
     });
@@ -106,7 +103,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response) {
                 const { access: accessToken } = response;
                 TokenService.setAccessToken(accessToken);
-                console.log("RefreshToken: ", accessToken);
                 const decodeAccessToken = jwtDecode(accessToken) as User;
                 setUser(decodeAccessToken);
                 return accessToken;
@@ -135,7 +131,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     useLayoutEffect(() => {
         const accessToken = TokenService.getAccessToken();
-        console.log(accessToken);
 
         if (accessToken) {
             setUser(jwtDecode(accessToken) as User);

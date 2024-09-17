@@ -38,7 +38,13 @@ export type Role = {
 export type Risk = {
     id: number;
     reference: string;
-    process: string;
+    process: {
+        id: number;
+        name: string;
+        description: string;
+        created_at: string;
+        updated_at: string;
+    };
     subprocess: {
         id: number;
         process: string;
@@ -47,12 +53,7 @@ export type Risk = {
         created_at: string;
         updated_at: string;
     } | null;
-    stackholder: {
-        id: number;
-        title: string;
-        name: string;
-        description: string;
-    };
+    stackholder: Stackholder[];
     process_objectives: string;
     inherent_risk_description: string;
     risk_type: {

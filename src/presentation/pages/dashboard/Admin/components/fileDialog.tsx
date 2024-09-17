@@ -65,7 +65,6 @@ const FileImportDialog: React.FC<FileImportProps> = () => {
         const droppedFile = event.dataTransfer.files[0]; // On ne prend que le premier fichier
         if (droppedFile) {
             setFile(droppedFile);
-            console.log("Dropped", file);
         }
     };
 
@@ -77,11 +76,6 @@ const FileImportDialog: React.FC<FileImportProps> = () => {
         if (file) {
             mutate(file); // Lancer l'importation si un fichier est présent
         } else {
-            // // toast({
-            //     title: "Erreur",
-            //     description: "Aucun fichier sélectionné.",
-            //     variant: "destructive",
-            // });
             console.log("Erreur d'importation");
         }
     };

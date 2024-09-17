@@ -24,16 +24,9 @@ const authService = {
             "/login/",
             credentials
         );
-        console.log("AuthService: ", response);
 
         TokenService.setAccessToken(response.data.access);
         TokenService.setRefreshToken(response.data.refresh);
-
-        console.log(
-            "tokenService: ",
-            TokenService.getAccessToken(),
-            TokenService.getRefreshToken()
-        );
 
         // localStorage.setItem("user", "hello");
 
@@ -46,7 +39,7 @@ const authService = {
             const response = await apiAuth.post("token/blacklist/", {
                 refresh: refreshToken,
             });
-            console.log("Logout response: ", response);
+            return response.data;
         } catch (error) {
             console.log("Logout Failed", error);
         }
@@ -60,7 +53,6 @@ const authService = {
                     refresh: refreshToken,
                 }
             );
-            console.log(response);
 
             return { access: response.data.access };
         } catch (error) {

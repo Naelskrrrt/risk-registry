@@ -5,20 +5,20 @@ import { useNavigate } from "react-router-dom";
 const useAuthRedirect = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-
+    console.log(user);
     useEffect(() => {
         if (user) {
-            switch (user.role_title) {
-                case "ADMIN":
+            switch (user.role_id) {
+                case 1:
                     navigate("/dashboard/admin", { replace: true });
                     break;
-                case "RRA":
-                    navigate("/dashboard/risk-assessment", { replace: true });
+                case 3:
+                    navigate("/dashboard/risk_ia", { replace: true });
                     break;
-                case "RIR":
-                    navigate("/dashboard/risk-it", { replace: true });
+                case 2:
+                    navigate("/dashboard/risk_it", { replace: true });
                     break;
-                case "VISITEUR":
+                case 4:
                     navigate("/home", { replace: true });
                     break;
                 default:

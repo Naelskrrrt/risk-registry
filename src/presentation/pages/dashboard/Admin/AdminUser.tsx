@@ -77,7 +77,6 @@ const columns: ColumnDef<User>[] = [
             const { user } = useAuth();
             useEffect(() => {
                 if (isSuccess) {
-                    console.log(response);
                     toast.success("Statut Modifié", {
                         description: `${response.message}`,
                     });
@@ -111,7 +110,6 @@ const columns: ColumnDef<User>[] = [
         header: "",
         cell: (row) => {
             const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-            console.log(row.row.original);
             const { id, session, name, email, role, stackholder } =
                 row.row.original;
             const defaultValue = {
@@ -171,8 +169,6 @@ const AdminUser = () => {
     const { data: roles } = useFetchRoles();
     const { data: stackholders } = useFetchStackholder();
 
-    console.log(roles);
-
     const resetFilters = () => {
         setSearch("");
         setRole(undefined);
@@ -195,11 +191,11 @@ const AdminUser = () => {
             });
         } catch (error) {
             // Afficher une notification d'erreur
-            console.log(error);
             toast.error("Erreur de rafraîchissement", {
                 description:
                     "Impossible de rafraîchir les données. Veuillez réessayer.",
             });
+            return error;
         }
     };
     return (

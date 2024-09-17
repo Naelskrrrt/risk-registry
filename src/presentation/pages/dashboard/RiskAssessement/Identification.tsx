@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+    useExportToExcelRIA,
     useFetchProcess,
-    useFetchSubprocess,
     useFilteredRIA,
 } from "@/hooks/RIA/useFetchRIA";
 import { useFetchStackholder } from "@/hooks/Users/useFetchUsers";
 import { formatDate } from "@/lib/formatDate";
 import { DataTable } from "@/presentation/components/globalTable";
 import Loader from "@/presentation/components/loader/loader";
+import { fetchSubprocess } from "@/services/riaService";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Button } from "@nextui-org/button";
 import { DateRangePicker } from "@nextui-org/date-picker";
@@ -18,10 +20,10 @@ import {
 } from "@nextui-org/dropdown";
 import { Input } from "@nextui-org/input";
 import { ColumnDef } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Risk, Stackholder } from "../Admin/constant/constant";
-import { columns } from "./Column";
+import { columns } from "./ColumnIdentification";
 
 const Identification = () => {
     const [search, setSearch] = useState<string>("");
@@ -30,6 +32,8 @@ const Identification = () => {
     const [process_state, setProcessState] = useState<number>();
     const [level_state, setLevel] = useState<string>();
     const [subprocess_state, setSubprocess] = useState<number>();
+    const [subprocess, setSubprocesses] = useState<any[]>([]); // Stocker les sous-processus
+    const [subprocessPending, setSubprocessPending] = useState<boolean>(false);
     // search = "",
     // date = "",
     // process = "",
@@ -52,8 +56,40 @@ const Identification = () => {
         date: dateRange,
     });
 
+    const { mutate: exportToExcel, isPending: waitExport } =
+        useExportToExcelRIA({
+            search,
+            stackholder,
+            subprocess: subprocess_state,
+            inherent_risk_level: level_state,
+            process: process_state,
+            date: dateRange,
+        });
+
     const { data: stackholders, isPending } = useFetchStackholder();
     const { data: process, isPending: processPending } = useFetchProcess();
+    useEffect(() => {
+        const effectFetchSubprocess = async () => {
+            if (process_state) {
+                setSubprocessPending(true);
+                try {
+                    const fetchedSubprocess = await fetchSubprocess(
+                        process_state
+                    ); // Appel API pour récupérer les sous-processus
+                    setSubprocesses(fetchedSubprocess); // Mettre à jour l'état avec les sous-processus
+                } catch (error) {
+                    console.error(
+                        "Erreur lors du chargement des sous-processus",
+                        error
+                    );
+                } finally {
+                    setSubprocessPending(false);
+                }
+            }
+        };
+
+        effectFetchSubprocess();
+    }, [process_state]);
 
     const resetFilters = () => {
         setSearch("");
@@ -74,11 +110,11 @@ const Identification = () => {
                 description: "Les données ont été mises à jour avec succès.",
             });
         } catch (error) {
-            console.log(error);
             toast.error("Erreur de rafraîchissement", {
                 description:
                     "Impossible de rafraîchir les données. Veuillez réessayer.",
             });
+            throw new Error(error as string);
         }
     };
     return (
@@ -97,7 +133,7 @@ const Identification = () => {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <DateRangePicker
-                        label="Filtrer le Date d'ajout"
+                        label="Filtrer la Date d'ajout"
                         color="primary"
                         onChange={(date) => {
                             const start = formatDate(date.start);
@@ -142,42 +178,52 @@ const Identification = () => {
                                     <DropdownMenu
                                         aria-label="Nested menu"
                                         className="max-h-96 overflow-y-auto">
-                                        {process?.map(
-                                            (proc: {
-                                                id: number;
-                                                name: string;
-                                                description: string;
-                                            }) => (
-                                                <DropdownItem
-                                                    className={
-                                                        proc?.id ===
-                                                        process_state
-                                                            ? "bg-primary text-white"
-                                                            : ""
-                                                    }
-                                                    key={proc?.id}
-                                                    onClick={() => {
-                                                        if (
+                                        {processPending ? (
+                                            <DropdownItem className="flex flex-col items-center justify-center">
+                                                <Icon
+                                                    icon="eos-icons:three-dots-loading"
+                                                    // spin={true}
+                                                    fontSize={32}
+                                                />
+                                            </DropdownItem>
+                                        ) : (
+                                            process?.map(
+                                                (proc: {
+                                                    id: number;
+                                                    name: string;
+                                                    description: string;
+                                                }) => (
+                                                    <DropdownItem
+                                                        className={
                                                             proc?.id ===
                                                             process_state
-                                                        ) {
-                                                            setSubprocess(
-                                                                undefined
-                                                            );
-                                                            setProcessState(
-                                                                undefined
-                                                            );
-                                                        } else {
-                                                            setSubprocess(
-                                                                undefined
-                                                            );
-                                                            setProcessState(
-                                                                proc?.id
-                                                            );
+                                                                ? "bg-primary text-white"
+                                                                : ""
                                                         }
-                                                    }}>
-                                                    {proc.id} - {proc?.name}
-                                                </DropdownItem>
+                                                        key={proc?.id}
+                                                        onClick={() => {
+                                                            if (
+                                                                proc?.id ===
+                                                                process_state
+                                                            ) {
+                                                                setSubprocess(
+                                                                    undefined
+                                                                );
+                                                                setProcessState(
+                                                                    undefined
+                                                                );
+                                                            } else {
+                                                                setSubprocess(
+                                                                    undefined
+                                                                );
+                                                                setProcessState(
+                                                                    proc?.id
+                                                                );
+                                                            }
+                                                        }}>
+                                                        {proc?.name}
+                                                    </DropdownItem>
+                                                )
                                             )
                                         )}
                                     </DropdownMenu>
@@ -246,7 +292,7 @@ const Identification = () => {
                                                     }
                                                 />
                                             }>
-                                            Level
+                                            Inherent Risk Level
                                         </Button>
                                     </DropdownTrigger>
                                     <DropdownMenu aria-label="Nested menu">
@@ -270,13 +316,17 @@ const Identification = () => {
                                     </DropdownMenu>
                                 </Dropdown>
                             </DropdownItem>
-                            {/* {process_state ? (
-                                <DropdownItem key="subprocess">
+                            <DropdownItem
+                                key="subprocess"
+                                className={`${
+                                    process_state ? "block" : "hidden"
+                                }`}>
+                                {process_state && (
                                     <Dropdown placement="right-start">
                                         <DropdownTrigger className="p-0 ">
                                             <Button
                                                 variant="flat"
-                                                className=" text-left w-full bg-transparent flex justify-start gap-5 pl-2"
+                                                className="text-left w-full bg-transparent flex justify-start gap-5 pl-2"
                                                 startContent={
                                                     <Icon
                                                         icon={
@@ -289,45 +339,51 @@ const Identification = () => {
                                         </DropdownTrigger>
 
                                         <DropdownMenu aria-label="subprocess">
-                                            {subprocessPending
-                                                ? "Chargement"
-                                                : subprocess?.map(
-                                                      (sub: {
-                                                          id: number;
-                                                          process: string;
-                                                          name: string;
-                                                      }) => (
-                                                          <DropdownItem
-                                                              className={
-                                                                  sub.id ===
-                                                                  subprocess_state
-                                                                      ? "bg-primary text-white"
-                                                                      : ""
-                                                              }
-                                                              key={sub.id}
-                                                              onClick={() => {
-                                                                  return sub.id ===
-                                                                      subprocess_state
-                                                                      ? setSubprocess(
-                                                                            undefined
-                                                                        )
-                                                                      : setSubprocess(
-                                                                            sub.id
-                                                                        );
-                                                              }}>
-                                                              <span className="font-bold">
-                                                                  {sub.process}:
-                                                              </span>
-                                                              {sub.name}
-                                                          </DropdownItem>
-                                                      )
-                                                  )}
+                                            {subprocessPending ? (
+                                                <DropdownItem className="flex flex-col items-center justify-center">
+                                                    <Icon
+                                                        icon="eos-icons:three-dots-loading"
+                                                        // spin={true}
+                                                        fontSize={32}
+                                                    />
+                                                </DropdownItem>
+                                            ) : (
+                                                subprocess?.map(
+                                                    (sub: {
+                                                        id: number;
+                                                        process: string;
+                                                        name: string;
+                                                    }) => (
+                                                        <DropdownItem
+                                                            className={
+                                                                sub.id ===
+                                                                subprocess_state
+                                                                    ? "bg-primary text-white"
+                                                                    : ""
+                                                            }
+                                                            key={sub.id}
+                                                            onClick={() => {
+                                                                return sub.id ===
+                                                                    subprocess_state
+                                                                    ? setSubprocess(
+                                                                          undefined
+                                                                      )
+                                                                    : setSubprocess(
+                                                                          sub.id
+                                                                      );
+                                                            }}>
+                                                            <span className="font-bold">
+                                                                {sub.process}:
+                                                            </span>
+                                                            {sub.name}
+                                                        </DropdownItem>
+                                                    )
+                                                )
+                                            )}
                                         </DropdownMenu>
                                     </Dropdown>
-                                </DropdownItem>
-                            ) : (
-                                <DropdownItem className="hidden"></DropdownItem>
-                            )} */}
+                                )}
+                            </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
                 </div>
@@ -346,8 +402,8 @@ const Identification = () => {
                         isIconOnly={true}
                         children={<Icon icon="solar:download-linear" />}
                         className="text-white bg-slate-950 text-lg font-bold rounded-lg hover:bg-slate-900"
-                        // onClick={() => exportToExcel()}
-                        // disabled={waitExport}
+                        onClick={() => exportToExcel()}
+                        disabled={waitExport}
                         title="Exporter les utilisateurs"
                     />
                 </div>

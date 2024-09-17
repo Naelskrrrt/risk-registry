@@ -58,7 +58,7 @@ export const fetchExportToExcel = async (filters: UserFilterParams) => {
 export const createUser = async (userData: UserFormFields) => {
     const response = await apiClient.post(`/api/v1/users/`, {
         ...userData,
-        password:""
+        password: "",
     });
     return response.data;
 };

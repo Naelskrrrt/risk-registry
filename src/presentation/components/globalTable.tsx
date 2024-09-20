@@ -107,16 +107,16 @@ export function DataTable<TData, TValue>({
                             selectedKeys={selectedKeys}
                             closeOnSelect={false}
                             suppressHydrationWarning
-                            className="h-fit overflow-y-auto w-full flex flex-col gap-2"
+                            className="h-fit overflow-y-auto z-50 w-full flex flex-col gap-2"
                             classNames={{
-                                list: "w-full grid grid-cols-3 gap-2 p-2",
+                                list: "w-full grid grid-cols-3 gap-2 p-2 z-50",
                             }}
                             disabledKeys={["action"]}
+                            style={{ zIndex: 1000 }}
                             // onSelectionChange={setSelectedKeys}
                         >
                             {columns.map((column) => (
                                 <DropdownItem
-                                    classNames={{}}
                                     key={column.id}
                                     onClick={() =>
                                         toggleColumnVisibility(column)
@@ -130,15 +130,19 @@ export function DataTable<TData, TValue>({
             )}
 
             {/* Table de données */}
-            <Table className="border w-full min-w-full">
+            <Table className="border w-full ">
                 <TableHeader className="bg-nextblue-50 font-bold sticky top-0 text-nextblue-500 hover:bg-nextblue-100">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow
                             key={headerGroup.id}
                             className="bg-nextblue-100">
-                            {headerGroup.headers.map((header) => (
+                            {headerGroup.headers.map((header, index) => (
                                 <TableHead
-                                    className="text-nextblue-500"
+                                    className={`text-nextblue-500 ${
+                                        index === 0
+                                            ? "sticky left-0 z-10 bg-slate-200/20 backdrop-blur-md"
+                                            : ""
+                                    }`}
                                     key={header.id}>
                                     {header.isPlaceholder
                                         ? null
@@ -155,10 +159,14 @@ export function DataTable<TData, TValue>({
                     {table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow key={row.id} className="relative w-full">
-                                {row.getVisibleCells().map((cell) => (
+                                {row.getVisibleCells().map((cell, index) => (
                                     <TableCell
                                         key={cell.id}
-                                        className="min-w-32">
+                                        className={`min-w-32 ${
+                                            index === 0
+                                                ? "sticky left-0 z-10 bg-slate-100 backdrop-blur-md"
+                                                : ""
+                                        }`}>
                                         {flexRender(
                                             cell.column.columnDef.cell,
                                             cell.getContext()

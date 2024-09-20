@@ -159,6 +159,7 @@ const AdminUser = () => {
         date: dateRange,
     });
 
+    console.log(import.meta.env.VITE_API_URL);
     const { mutate: exportToExcel, isPending: waitExport } = useExportToExcel({
         search,
         role,

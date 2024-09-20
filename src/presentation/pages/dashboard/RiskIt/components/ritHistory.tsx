@@ -1,31 +1,34 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useFetchHistory } from "@/hooks/RIA/useFetchRIA";
+import { useFetchRitHistory } from "@/hooks/RIT/useFetchRit";
 import { DataTable } from "@/presentation/components/globalTable";
 import Loader from "@/presentation/components/loader/loader";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/modal";
 import { ColumnDef } from "@tanstack/react-table";
 import { Risk } from "../../Admin/constant/constant";
 import { historyColumns } from "../ColumnIdentification";
+import { RiskIT } from "../types";
+import { Button } from "@nextui-org/button";
 
 export type riaHistoryProps = {
     refetch?: () => void;
     isDialogOpen?: boolean;
     setIsDialogOpen?: (value: boolean) => void;
-    defaultValues?: Risk;
+    defaultValues?: RiskIT;
     width?: string; // Nouvelle propriété pour largeur personnalisée
     height?: string; // Nouvelle propriété pour hauteur personnalisée
 };
 
-const RiaHistory = ({
+const RitHistory = ({
     isDialogOpen,
     setIsDialogOpen,
     defaultValues,
     width = "80%", // Valeur par défaut pour la largeur
     height = "100vh", // Valeur par défaut pour la hauteur
 }: riaHistoryProps) => {
-    const { data: riaHistory, isLoading } = useFetchHistory(defaultValues?.id);
+    const { data: ritHistory, isLoading } = useFetchRitHistory(
+        defaultValues?.id as number
+    );
 
-    console.log(riaHistory);
     return (
         <Modal
             size="full"
@@ -46,14 +49,6 @@ const RiaHistory = ({
                             <div className="flex flex-col">
                                 <div className="flex gap-1 items-center">
                                     <span className="text-gray-500 text-sm">
-                                        Ref:
-                                    </span>
-                                    <span className="text-gray-800 font-semibold">
-                                        {defaultValues?.reference}
-                                    </span>
-                                </div>
-                                <div className="flex gap-1 items-center">
-                                    <span className="text-gray-500 text-sm">
                                         Initiator:
                                     </span>
                                     <span className="text-gray-800 font-semibold">
@@ -68,7 +63,7 @@ const RiaHistory = ({
                                     <DataTable
                                         ListPerPage={5}
                                         isLoading={isLoading}
-                                        data={riaHistory ? riaHistory : []}
+                                        data={ritHistory ? ritHistory : []}
                                         columns={
                                             historyColumns as ColumnDef<Risk>[]
                                         }
@@ -83,37 +78,4 @@ const RiaHistory = ({
     );
 };
 
-export default RiaHistory;
-
-{
-    /* <DialogHeader>
-                    <DialogTitle>
-                        Historique de l'évaluation des risques.
-                    </DialogTitle>
-                    <DialogDescription>
-                        Tous les historiques de l'évaluation des risques seront
-                        affichés ici.
-                    </DialogDescription>
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Référence</span>
-                        <span className="text-gray-800 font-semibold">
-                            {defaultValues?.reference}
-                        </span>
-                    </div>
-                </DialogHeader>
-
-                <div className="w-full h-full bg-transparent rounded-md overflow-x-auto">
-                    {isLoading ? (
-                        <Loader />
-                    ) : (
-                        <DataTable
-                            ListPerPage={5}
-                            isLoading={isLoading}
-                            data={riaHistory ? riaHistory : []}
-                            columns={historyColumns as ColumnDef<Risk>[]}
-                        />
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog> */
-}
+export default RitHistory;

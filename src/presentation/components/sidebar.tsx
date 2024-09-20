@@ -177,7 +177,8 @@ const Sidebar = () => {
                             className="ml-8 flex flex-col gap-1 overflow-hidden bg-slate-50/70 border-l-4 border-nextblue-500 pl-4 py-2">
                             {RISKS_IT_NAVIGATION.submenus.map(
                                 (submenu, index) => (
-                                    <div
+                                    <Link
+                                        to={submenu.path}
                                         key={index}
                                         className={`flex w-full items-center gap-3  py-2 px-3 rounded-md transition-all ease-in-out cursor-pointer hover:bg-white/80 ${
                                             isLinkActive(submenu.path)
@@ -193,7 +194,7 @@ const Sidebar = () => {
                                         <span className="text-[14px] font-medium w-full">
                                             {submenu.label}
                                         </span>
-                                    </div>
+                                    </Link>
                                 )
                             )}
                         </motion.div>

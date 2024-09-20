@@ -82,11 +82,20 @@ export type Risk = {
         updated_at: string;
         of_control: boolean;
     }[];
-    nature_of_control: string;
-    automatic_or_manual_control: string;
-    quality_of_the_control: string;
-    residual_risk_level: string;
-    risk_strategy: string;
+    nature_of_control:
+        | "Preventive"
+        | "Detective"
+        | "Directive"
+        | "Compensating"
+        | undefined;
+    automatic_or_manual_control:
+        | "Manual"
+        | "Automatic"
+        | "Semi automatic"
+        | undefined;
+    quality_of_the_control: "Strong" | "Acceptable" | "Weak" | undefined;
+    residual_risk_level: "Low" | "Medium" | "High" | undefined;
+    risk_strategy: "Tolerate" | "Treat" | "Transfert" | "Terminate" | undefined;
     detail_of_strategy: string;
     date_of_assessment: string;
     initiator: string;

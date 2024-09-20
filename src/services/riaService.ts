@@ -1,6 +1,6 @@
 import { apiClient } from "@/api/apiClient";
 import { RIAFetchFilters } from "@/hooks/RIA/useFetchRIA";
-import { Risk } from "@/presentation/pages/dashboard/Admin/constant/constant";
+import { RiskAssessment } from "@/presentation/pages/dashboard/RiskAssessement/types/Columns";
 
 export const fetchFilteredRIA = async (filters: RIAFetchFilters) => {
     const {
@@ -79,7 +79,10 @@ export const fetchCategory = async () => {
     return response.data;
 };
 
-export const updateRia = async (riaID: number | undefined, riaData: Risk) => {
+export const updateRia = async (
+    riaID: number | undefined,
+    riaData: RiskAssessment
+) => {
     if (riaID === undefined) {
         throw new Error("User ID is required to update user");
     }
@@ -99,4 +102,12 @@ export const updateRia = async (riaID: number | undefined, riaData: Risk) => {
         );
         throw error;
     }
+};
+
+export const fetchHistoryRia = async (id?: number) => {
+    const response = await apiClient.get(
+        `/api/v1/history/retrieve_by_risk_ia/${id}`
+    );
+
+    return response.data;
 };

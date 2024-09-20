@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Risk } from "../../Admin/constant/constant";
+import { Risk as RiskIA } from "../../Admin/constant/constant";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export type Subprocess = {
@@ -84,29 +84,32 @@ export type RIADialogProps = {
     refetch?: () => void;
     isDialogOpen?: boolean;
     setIsDialogOpen?: (value: boolean) => void;
-    defaultValues?: Risk;
+    defaultValues?: RiskIA;
 };
 
-export type RiskAssessment = {
-    reference: string;
-    process: number | undefined;
-    subprocess: number | undefined;
-    stackholder?: number[];
-    process_objectives: string;
-    inherent_risk_description: string;
-    risk_type: number[] | string;
-    probability: number | string;
-    impact: number | string;
-    inherent_risk_level: string;
-    affected_area: number[] | string;
-    controls_in_place: string;
-    category: number[] | string;
-    nature_of_control: string;
-    automatic_or_manual_control: string;
-    quality_of_the_control: string;
-    residual_risk_level: string;
-    risk_strategy: string;
-    detail_of_strategy: string;
-    date_of_assessment: string;
-    initiator: string;
-};
+export interface RiskAssessment {
+    affected_area: number[]; // Tableau d'identifiants pour les zones affectées
+    automatic_or_manual_control: "Manual" | "Automatic" | "Semi automatic"; // Contrôle automatique ou manuel
+    category?: number[]; // Tableau d'identifiants pour les catégories
+    controls_in_place: string; // Description des contrôles en place
+    detail_of_strategy: string; // Détails de la stratégie
+    impact: number; // Impact (valeur numérique)
+    inherent_risk_description: string; // Description du risque inhérent
+
+    nature_of_control:
+        | "Preventive"
+        | "Detective"
+        | "Directive"
+        | "Compensating"
+        | undefined; // Nature du contrôle
+    probability: number; // Probabilité (valeur numérique)
+    process: number; // Identifiant du processus
+    process_objectives: string; // Objectifs du processus
+    quality_of_the_control: "Strong" | "Acceptable" | "Weak"; // Qualité du contrôle
+    reference: string; // Référence (chaîne de caractères)
+
+    risk_strategy: "Tolerate" | "Treat" | "Transfert" | "Terminate"; // Stratégie de risque
+    risk_type?: number[]; // Tableau d'identifiants pour les types de risque
+    stackholder?: number[]; // Tableau d'identifiants pour les parties prenantes
+    subprocess?: number; // Identifiant du sous-processus
+}

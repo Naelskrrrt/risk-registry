@@ -1,6 +1,9 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 // services/authService.ts
+import { useNavigate } from "react-router-dom";
 import TokenService from "./tokenService";
 import { apiAuth } from "@/api/apiAuth";
+import { toast } from "sonner";
 
 interface User {
     id: string;
@@ -56,7 +59,12 @@ const authService = {
 
             return { access: response.data.access };
         } catch (error) {
-            console.log("Refresh Failed", error);
+            const navigation = useNavigate();
+            navigation("/login");
+            toast.error("Vous etes Déconnécté !", {
+                description: "Veuillez vous reconnécter pour continuer !",
+            });
+            console.log("Refresh Error: ", error);
         }
         // Retourner uniquement le jeton d'accès
     },

@@ -1,9 +1,12 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-import { Input } from "@nextui-org/input";
-import { Button } from "@nextui-org/button";
-import { toast } from "sonner";
+import {
+    useFetchAffectedArea,
+    useFetchCategory,
+    useFetchProcess,
+    useFetchRiskType,
+    useUpdateResource,
+} from "@/hooks/RIA/useFetchRIA";
+import { useFetchStackholder } from "@/hooks/Users/useFetchUsers";
 import {
     Dialog,
     DialogContent,
@@ -11,23 +14,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/presentation/components/ui/dialog";
-import { Process, RiskAssessment, Subprocess } from "../types/Columns";
-import { useFetchStackholder } from "@/hooks/Users/useFetchUsers";
-import {
-    AffectedArea,
-    Risk,
-    RiskTypes,
-    Stackholder,
-} from "../../Admin/constant/constant";
 import MultipleSelector, {
     Option,
 } from "@/presentation/components/ui/multi-select";
-import {
-    useFetchAffectedArea,
-    useFetchCategory,
-    useFetchProcess,
-    useFetchRiskType,
-} from "@/hooks/RIA/useFetchRIA";
 import {
     Select,
     SelectContent,
@@ -37,9 +26,65 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/presentation/components/ui/select";
-import { fetchSubprocess, updateRia } from "@/services/riaService";
-import { RIADialogProps } from "../types/Columns";
-import { useUpdateResource } from "@/hooks/RIA/useFetchRIA";
+import { fetchSubprocess } from "@/services/riaService";
+import { Button } from "@nextui-org/button";
+import { Input } from "@nextui-org/input";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
+import {
+    AffectedArea,
+    RiskTypes,
+    Stackholder,
+} from "../../Admin/constant/constant";
+import {
+    Process,
+    RIADialogProps,
+    RiskAssessment,
+    Subprocess,
+} from "../types/Columns";
+
+const RiskAssessmentSchema = z.object({
+    reference: z.string().nonempty("Le champ 'reference' est obligatoire"),
+    process_objectives: z
+        .string()
+        .nonempty("Le champ 'process_objectives' est obligatoire"),
+    inherent_risk_description: z
+        .string()
+        .nonempty("Le champ 'inherent_risk_description' est obligatoire"),
+
+    nature_of_control: z
+        .string()
+        .nonempty("Le champ 'nature_of_control' est obligatoire"),
+    automatic_or_manual_control: z
+        .string()
+        .nonempty("Le champ 'automatic_or_manual_control' est obligatoire"),
+    quality_of_the_control: z.enum(["Strong", "Acceptable", "Weak"]),
+    detail_of_strategy: z
+        .string()
+        .nonempty("Le champ 'detail_of_strategy' est obligatoire"),
+    process: z.number().min(1, "Le process doit être un nombre valide"),
+    risk_strategy: z
+        .string()
+        .nonempty("Le champ 'risk_strategy' est obligatoire"),
+    subprocess: z.number().min(1, "Le subprocess doit être un nombre valide"),
+    stackholder: z
+        .array(z.number())
+        .nonempty("Le champ 'stackholder' est obligatoire"),
+    category: z
+        .array(z.number())
+        .nonempty("Le champ 'category' est obligatoire"),
+    affected_area: z
+        .array(z.number())
+        .nonempty("Le champ 'affected_area' est obligatoire"),
+    risk_type: z
+        .array(z.number())
+        .nonempty("Le champ 'risk_type' est obligatoire"),
+
+    controls_in_place: z
+        .string()
+        .nonempty("Le champ 'controls_in_place' est obligatoire"),
+});
 
 export const RiaDialog = ({
     refetch,
@@ -56,29 +101,48 @@ export const RiaDialog = ({
             defaultValues?.inherent_risk_description || "",
         probability: defaultValues?.probability || 0,
         impact: defaultValues?.impact || 0,
-        inherent_risk_level: defaultValues?.inherent_risk_level || "",
         controls_in_place: defaultValues?.controls_in_place || "",
-        nature_of_control: defaultValues?.nature_of_control || "",
+        nature_of_control: defaultValues?.nature_of_control || "Preventive",
         automatic_or_manual_control:
-            defaultValues?.automatic_or_manual_control || "",
-        quality_of_the_control: defaultValues?.quality_of_the_control || "",
-        residual_risk_level: defaultValues?.residual_risk_level || "",
-        risk_strategy: defaultValues?.risk_strategy || "",
+            defaultValues?.automatic_or_manual_control || "Manual",
+        quality_of_the_control: defaultValues?.quality_of_the_control || "Weak",
+        risk_strategy: defaultValues?.risk_strategy || "Tolerate",
         detail_of_strategy: defaultValues?.detail_of_strategy || "",
-        date_of_assessment: defaultValues?.date_of_assessment || "",
-        initiator: defaultValues?.initiator || "",
-        stackholder: defaultValues?.stackholder || [],
-        // Ajoutez les propriétés manquantes ici
-
-        risk_type: defaultValues?.risk_type || [], // Ajoutez cette ligne
-        affected_area: defaultValues?.affected_area || [], // Ajoutez cette ligne
-        category: defaultValues?.category || [], // Ajoutez cette ligne
+        stackholder: [],
+        risk_type: [],
+        affected_area: [],
+        category: [],
     });
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+    const validateFormData = (data: any) => {
+        try {
+            RiskAssessmentSchema.parse(data);
+            toast.success("Les données sont valides", {
+                description: `Les données sont valides`,
+            });
+            setErrors({});
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                console.error(error.errors);
+                toast.error("Les données ne sont pas valides", {
+                    description: error.errors
+                        .map((err) => err.message)
+                        .join("\n"),
+                });
+                const newErrors: { [key: string]: string } = {};
+                error.errors.forEach((err) => {
+                    newErrors[err.path[0]] = err.message;
+                });
+                setErrors(newErrors);
+            }
+        }
+    };
     const [step, setStep] = useState(1);
     const [selectedStackholders, setSelectedStackholders] = useState<Option[]>(
         []
     );
+
     const [selectedRiskType, setSelectedRiskType] = useState<Option[]>([]);
     const [selectedAffectedArea, setSelectedAffectedArea] = useState<Option[]>(
         []
@@ -89,13 +153,10 @@ export const RiaDialog = ({
         defaultValues?.process?.id || 0
     );
     const [subprocesses, setSubprocesses] = useState<Subprocess[]>([]);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [subprocessPending, setSubprocessPending] = useState<boolean>(false);
 
     useEffect(() => {
         const effectFetchSubprocess = async () => {
             if (process_state) {
-                setSubprocessPending(true);
                 try {
                     const fetchedSubprocess: Subprocess[] =
                         await fetchSubprocess(process_state);
@@ -106,7 +167,7 @@ export const RiaDialog = ({
                         error
                     );
                 } finally {
-                    setSubprocessPending(false);
+                    console.log("Subprocesses", process_state);
                 }
             }
         };
@@ -197,23 +258,22 @@ export const RiaDialog = ({
 
     const {
         mutate: updateRIA,
-        isError,
-        isSuccess,
-        error,
+
+        isPending,
     } = useUpdateResource();
 
-    const onSubmit = (data) => {
-        data.preventDefault();
+    const onSubmit = () => {
+        validateFormData(formData);
         console.log(formData);
         updateRIA(
-            { id: defaultValues?.id, data: formData as Risk },
+            { id: defaultValues?.id, data: formData as RiskAssessment },
             {
                 onSuccess: () => {
                     toast.success("Risk mit à jour avec succès", {
                         description: `Risk mit à jour`,
                     });
+                    setStep(1);
                     setIsDialogOpen?.(false);
-                    // resetValue();
                     if (refetch) return refetch();
                 },
             }
@@ -222,7 +282,7 @@ export const RiaDialog = ({
 
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
                         Modifier l'évaluation des risques.
@@ -235,40 +295,53 @@ export const RiaDialog = ({
                     {/* Étape 1: Informations personnelles */}
                     {step === 1 && (
                         <>
-                            <Input
-                                label="Référence"
-                                name="reference"
-                                value={formData.reference}
-                                onChange={handleChange}
-                            />
+                            <div>
+                                <Input
+                                    label="Reference"
+                                    name="reference"
+                                    value={formData.reference}
+                                    onChange={handleChange}
+                                />
+                                <p className="text-red-500 text-sm">
+                                    {errors.reference}
+                                </p>
+                            </div>
                             <div className="flex gap-4 h-14">
-                                <Select
-                                    value={process_state?.toString()}
-                                    onValueChange={(value: string) => {
-                                        handleSelectChange(
-                                            "process",
-                                            parseInt(value)
-                                        );
-                                        setProcessState(parseInt(value));
-                                    }}>
-                                    <SelectTrigger className="w-full h-full relative">
-                                        <SelectValue placeholder="Sélectionner un process" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>
-                                                Sélectionner un process:
-                                            </SelectLabel>
-                                            {processes?.map((proc: Process) => (
-                                                <SelectItem
-                                                    key={proc.id}
-                                                    value={proc.id.toString()}>
-                                                    {proc.id} - {proc.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <div className="w-full">
+                                    <Select
+                                        value={process_state?.toString()}
+                                        onValueChange={(value: string) => {
+                                            handleSelectChange(
+                                                "process",
+                                                parseInt(value)
+                                            );
+                                            setProcessState(parseInt(value));
+                                        }}>
+                                        <SelectTrigger className="w-full h-full relative">
+                                            <SelectValue placeholder="Sélectionner un process" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>
+                                                    Sélectionner un process:
+                                                </SelectLabel>
+                                                {processes?.map(
+                                                    (proc: Process) => (
+                                                        <SelectItem
+                                                            key={proc.id}
+                                                            value={proc.id.toString()}>
+                                                            {proc.id} -{" "}
+                                                            {proc.name}
+                                                        </SelectItem>
+                                                    )
+                                                )}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-red-500 text-sm">
+                                        {errors.process}
+                                    </p>
+                                </div>
                                 {process_state && (
                                     <Select
                                         value={formData?.subprocess?.toString()}
@@ -303,75 +376,113 @@ export const RiaDialog = ({
                                     </Select>
                                 )}
                             </div>
-                            <Input
-                                label="Process Objectives"
-                                name="process_objectives"
-                                value={formData.process_objectives}
-                                onChange={handleChange}
-                            />
-                            <Input
-                                label="Inherent risk Description"
-                                name="inherent_risk_description"
-                                value={formData.inherent_risk_description}
-                                onChange={handleChange}
-                            />
-                            <MultipleSelector
-                                value={selectedStackholders}
-                                onChange={setSelectedStackholders}
-                                className="w-full min-h-14 relative flex flex-col justify-center"
-                                options={stackholders?.map(
-                                    (stackholder: Stackholder) => ({
-                                        value: stackholder.id,
-                                        label: stackholder.name,
-                                    })
-                                )}
-                                placeholder="Selectionner le(s) stakeholder(s)"
-                                emptyIndicator={
-                                    <p className="text-center leading-10 text-gray-600 dark:text-gray-400">
-                                        Pas de stakeholder trouvé
-                                    </p>
-                                }
-                            />
-                            <Button onClick={onSubmit}>Soumettre</Button>
-                            <Button onClick={() => setStep(2)}>Suivant</Button>
+                            <div>
+                                <Input
+                                    label="Process Objectives"
+                                    name="process_objectives"
+                                    value={formData.process_objectives}
+                                    onChange={handleChange}
+                                />
+                                <p className="text-sm text-red-500">
+                                    {errors.process_objectives}
+                                </p>
+                            </div>
+                            <div className="w-full">
+                                <Input
+                                    label="Inherent risk Description"
+                                    name="inherent_risk_description"
+                                    value={formData.inherent_risk_description}
+                                    onChange={handleChange}
+                                />
+                                <p className="text-sm text-red-500">
+                                    {errors.inherent_risk_description}
+                                </p>
+                            </div>
+                            <div className="w-full">
+                                <MultipleSelector
+                                    value={selectedStackholders}
+                                    onChange={setSelectedStackholders}
+                                    className="w-full min-h-14 relative flex flex-col justify-center"
+                                    options={stackholders?.map(
+                                        (stackholder: Stackholder) => ({
+                                            value: stackholder.id,
+                                            label: stackholder.name,
+                                        })
+                                    )}
+                                    placeholder="Selectionner le(s) stakeholder(s)"
+                                    emptyIndicator={
+                                        <p className="text-center leading-10 text-gray-600 dark:text-gray-400">
+                                            Pas de stakeholder trouvé
+                                        </p>
+                                    }
+                                />
+                                <p className="text-sm text-red-500">
+                                    {errors.stackholder}
+                                </p>
+                            </div>
+                            <Button
+                                onClick={() => setStep(2)}
+                                color="primary"
+                                className="w-fit">
+                                Suivant
+                            </Button>
                         </>
                     )}
 
                     {/* Étape 2: Informations de contact */}
                     {step === 2 && (
                         <>
-                            <MultipleSelector
-                                value={selectedRiskType}
-                                onChange={setSelectedRiskType}
-                                className="w-full min-h-14 relative flex flex-col justify-center"
-                                options={risk_types?.map(
-                                    (risk_type: RiskTypes) => ({
-                                        value: risk_type.id,
-                                        label: risk_type.name,
-                                    })
-                                )}
-                                placeholder="Selectionner le(s) Types de Risk(s)"
-                                emptyIndicator={
-                                    <p className="text-center leading-10 text-gray-600 dark:text-gray-400">
-                                        Pas de Risk Type trouvé
-                                    </p>
-                                }
-                            />
+                            <div className="w-full">
+                                <MultipleSelector
+                                    value={selectedRiskType}
+                                    onChange={setSelectedRiskType}
+                                    className="w-full min-h-14 relative flex flex-col justify-center"
+                                    options={risk_types?.map(
+                                        (risk_type: RiskTypes) => ({
+                                            value: risk_type.id,
+                                            label: risk_type.name,
+                                        })
+                                    )}
+                                    placeholder="Selectionner le(s) Types de Risk(s)"
+                                    emptyIndicator={
+                                        <p className="text-center leading-10 text-gray-600 dark:text-gray-400">
+                                            Pas de Risk Type trouvé
+                                        </p>
+                                    }
+                                />
+                                <p className="text-sm text-red-500">
+                                    {errors.risk_type}
+                                </p>
+                            </div>
                             <div className="flex gap-2">
-                                <Input
-                                    label="Probability"
-                                    type="number"
-                                    name="probability"
-                                    value={formData.probability as string}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Impact"
-                                    type="number"
-                                    name="impact"
-                                    value={formData.impact as string}
-                                    onChange={handleChange}
-                                />
+                                <div className="w-full">
+                                    <Input
+                                        label="Probability"
+                                        type="number"
+                                        name="probability"
+                                        value={formData.probability}
+                                        onChange={handleChange}
+                                        min={0}
+                                        max={3}
+                                    />
+                                    <p className="text-sm text-red-500">
+                                        {errors.probability}
+                                    </p>
+                                </div>
+                                <div className="w-full">
+                                    <Input
+                                        label="Impact"
+                                        type="number"
+                                        name="impact"
+                                        value={formData.impact}
+                                        onChange={handleChange}
+                                        min={0}
+                                        max={3}
+                                    />
+                                    <p className="text-sm text-red-500">
+                                        {errors.impact}
+                                    </p>
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <MultipleSelector
@@ -414,7 +525,7 @@ export const RiaDialog = ({
                             </div>
                             <div className="flex gap-2">
                                 <Select
-                                    value={formData.risk_strategy.toLowerCase()}
+                                    value={formData.risk_strategy}
                                     onValueChange={(value: string) =>
                                         handleSelectChange(
                                             "risk_strategy",
@@ -436,26 +547,37 @@ export const RiaDialog = ({
                                                 "Terminate",
                                             ].map((riskStrat) => (
                                                 <SelectItem
-                                                    key={riskStrat.toLowerCase()}
-                                                    value={riskStrat.toLowerCase()}>
+                                                    key={riskStrat}
+                                                    value={riskStrat}>
                                                     {riskStrat}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                <p className="text-sm text-red-500">
+                                    {errors.risk_strategy}
+                                </p>
                                 <Input
                                     label="Detail of Strategy"
                                     name="detail_of_strategy"
                                     value={formData.detail_of_strategy}
                                     onChange={handleChange}
                                 />
+                                <p className="text-sm text-red-500">
+                                    {errors.detail_of_strategy}
+                                </p>
                             </div>
                             <div className="flex gap-2">
-                                <Button onClick={() => setStep(1)}>
+                                <Button
+                                    onClick={() => setStep(1)}
+                                    variant="flat"
+                                    color="warning">
                                     Précédent
                                 </Button>
-                                <Button onClick={() => setStep(3)}>
+                                <Button
+                                    onClick={() => setStep(3)}
+                                    color="primary">
                                     Suivant
                                 </Button>
                             </div>
@@ -467,7 +589,7 @@ export const RiaDialog = ({
                         <>
                             <div className="flex gap-2">
                                 <Select
-                                    value={formData.nature_of_control.toLowerCase()}
+                                    value={formData?.nature_of_control}
                                     onValueChange={(value: string) =>
                                         handleSelectChange(
                                             "nature_of_control",
@@ -489,16 +611,19 @@ export const RiaDialog = ({
                                                 "Compensating",
                                             ].map((item) => (
                                                 <SelectItem
-                                                    key={item.toLowerCase()}
-                                                    value={item.toLowerCase()}>
+                                                    key={item}
+                                                    value={item}>
                                                     {item}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                <p className="text-sm text-red-500">
+                                    {errors.nature_of_control}
+                                </p>
                                 <Select
-                                    value={formData.automatic_or_manual_control.toLowerCase()}
+                                    value={formData.automatic_or_manual_control}
                                     onValueChange={(value: string) =>
                                         handleSelectChange(
                                             "automatic_or_manual_control",
@@ -519,14 +644,17 @@ export const RiaDialog = ({
                                                 "Semi automatic",
                                             ].map((item) => (
                                                 <SelectItem
-                                                    key={item.toLowerCase()}
-                                                    value={item.toLowerCase()}>
+                                                    key={item}
+                                                    value={item}>
                                                     {item}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                <p className="text-sm text-red-500">
+                                    {errors.automatic_or_manual_control}
+                                </p>
                             </div>
                             <div className="flex gap-2">
                                 <Input
@@ -535,8 +663,11 @@ export const RiaDialog = ({
                                     value={formData.controls_in_place}
                                     onChange={handleChange}
                                 />
+                                <p className="text-sm text-red-500">
+                                    {errors.controls_in_place}
+                                </p>
                                 <Select
-                                    value={formData.quality_of_the_control.toLowerCase()}
+                                    value={formData.quality_of_the_control}
                                     onValueChange={(value: string) =>
                                         handleSelectChange(
                                             "quality_of_the_control",
@@ -557,20 +688,31 @@ export const RiaDialog = ({
                                                 "Weak",
                                             ].map((item) => (
                                                 <SelectItem
-                                                    key={item.toLowerCase()}
-                                                    value={item.toLowerCase()}>
+                                                    key={item}
+                                                    value={item}>
                                                     {item}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                <p className="text-sm text-red-500">
+                                    {errors.quality_of_the_control}
+                                </p>
                             </div>
                             <div className="flex gap-2">
-                                <Button onClick={() => setStep(2)}>
+                                <Button
+                                    onClick={() => setStep(2)}
+                                    color="warning"
+                                    variant="flat">
                                     Précédent
                                 </Button>
-                                <Button onClick={onSubmit}>Soumettre</Button>
+                                <Button
+                                    onClick={onSubmit}
+                                    isLoading={isPending}
+                                    color="primary">
+                                    Soumettre
+                                </Button>
                             </div>
                         </>
                     )}

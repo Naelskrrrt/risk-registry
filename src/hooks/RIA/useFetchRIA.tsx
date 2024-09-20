@@ -1,9 +1,10 @@
-import { Risk } from "@/presentation/pages/dashboard/Admin/constant/constant";
+import { RiskAssessment } from "@/presentation/pages/dashboard/RiskAssessement/types/Columns";
 import {
     fetchAffectedArea,
     fetchCategory,
     fetchExportToExcelRIA,
     fetchFilteredRIA,
+    fetchHistoryRia,
     fetchProcess,
     fetchRiskType,
     fetchSubprocess,
@@ -77,11 +78,20 @@ export const useFetchCategory = () => {
     });
 };
 
+export const useFetchHistory = (id?: number) => {
+    return useQuery({
+        queryKey: ["history_ia", id],
+        queryFn: () => fetchHistoryRia(id),
+    });
+};
+
 export const useUpdateResource = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (params: { id: number | undefined; data: Risk }) =>
-            updateRia(params.id, params.data),
+        mutationFn: (params: {
+            id: number | undefined;
+            data: RiskAssessment;
+        }) => updateRia(params.id, params.data),
 
         onSuccess: (data) => {
             queryClient.invalidateQueries(); // Invalider les requêtes pour rafraîchir les données après la création

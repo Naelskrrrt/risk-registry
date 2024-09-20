@@ -149,7 +149,8 @@ const Identification = () => {
                                 color="primary"
                                 isIconOnly
                                 className="rounded-md"
-                                size="md">
+                                size="md"
+                                title="Filtrer les données">
                                 <Icon
                                     icon={"solar:filter-bold-duotone"}
                                     fontSize={22}
@@ -393,7 +394,7 @@ const Identification = () => {
                         onClick={refreshData}
                         variant="shadow"
                         color="danger"
-                        title="Revalider les données"
+                        title="Rafraichir les données"
                         className="relative">
                         <Icon icon={"solar:refresh-outline"} fontSize={22} />
                     </Button>
@@ -404,7 +405,7 @@ const Identification = () => {
                         className="text-white bg-slate-950 text-lg font-bold rounded-lg hover:bg-slate-900"
                         onClick={() => exportToExcel()}
                         disabled={waitExport}
-                        title="Exporter les utilisateurs"
+                        title="Exporter les données"
                     />
                 </div>
             </div>
